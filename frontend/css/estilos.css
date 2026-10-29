@@ -13,6 +13,48 @@ body {
 }
 
 h2 {
-    font-family: 'Big Shoulders Display', sans-serif; 
+    font-family: 'Big Shoulders Display', sans-serif;  
     color: #E9B949;
+}
+
+h3 {
+    font-family: Archivo, sans-serif; 
+    color: #F2EDE4;
+}
+
+
+.cartelera-header {
+    display: flex;                 /* Coloca los elementos en una fila */
+    justify-content: space-between; /* Separa el título y el botón */
+    align-items: center;           /* Los centra verticalmente */
+    max-width: 1160px;              /* Limita el ancho del encabezado */
+    margin: 40px auto;              /* Centra el contenedor y da espacio */
+    padding: 0 20px;                /* Agrega espacio a los lados */
+}
+
+.cartelera-titulos p {
+    font-size: 13px;                /* Tamaño del texto pequeño */
+    letter-spacing: 2px;            /* Separa las letras */
+    color: #b9b5c8;                 /* Color gris claro */
+    margin: 0 0 4px;   
+    font-family: Archivo, sans-serif;             /* Espacio debajo del texto */
+}
+
+.cartelera-titulos h1 {
+    font-size: 56px;                /* Tamaño grande del título */
+    color: #f5f0e8;                 /* Color crema */
+    margin: 0;                      /* Quita los márgenes predeterminados */
+    line-height: 1;    
+    font-family: 'Big Shoulders Display', sans-serif;             /* Reduce el espacio vertical */
+}
+
+.btn-reservar {
+    background-color: #f5f0e8;      /* Fondo crema */
+    color: #111014;                 /* Texto oscuro */
+    border: none;                   /* Quita el borde */
+    border-radius: 30px;            /* Redondea el botón */
+    padding: 15px 30px;             /* Espacio interno */
+    font-size: 14px;                /* Tamaño del texto */
+    font-weight: bold;              /* Texto en negrita */
+    cursor: pointer;                /* Muestra la mano al pasar */
 }
