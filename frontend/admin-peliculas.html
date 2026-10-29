@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administrar peliculas | Cinema System</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">Cinema System</a>
+    <nav aria-label="Administracion">
+      <a href="admin-peliculas.html" aria-current="page">Peliculas</a>
+      <a href="admin-salas.html">Salas</a>
+    </nav>
+  </header>
+  <main class="container">
+    <h1>Administrar peliculas</h1>
+    <p id="admin-peliculas-estado" role="status"></p>
+    <form id="form-pelicula">
+      <label>Nombre <input name="nombre" required maxlength="200"></label>
+      <label>Fecha de inicio <input name="fecha_inicio" type="date" required></label>
+      <label>Fecha de fin <input name="fecha_fin" type="date" required></label>
+      <label>Precio <input name="precio" type="number" min="0.01" step="0.01" required></label>
+      <label>Sala <input name="sala_id" type="number" min="1" required></label>
+      <button type="submit">Guardar pelicula</button>
+    </form>
+    <h2>Peliculas registradas</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Nombre</th><th>Periodo</th><th>Precio</th><th>Sala</th></tr></thead>
+        <tbody id="peliculas-lista"></tbody>
+      </table>
+    </div>
+  </main>
+  <script src="js/api.js"></script>
+  <script src="js/validaciones.js"></script>
+  <script src="js/admin-peliculas.js"></script>
+</body>
+</html>

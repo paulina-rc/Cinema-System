@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reservar | Cinema System</title>
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/reserva.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="index.html">Cinema System</a>
+    <nav aria-label="Navegacion principal"><a href="index.html">Cartelera</a></nav>
+  </header>
+  <main class="container">
+    <h1>Reserva de boletos</h1>
+    <ol class="steps" aria-label="Pasos de la reserva">
+      <li data-step="1" aria-current="step">Pelicula</li>
+      <li data-step="2">Funcion</li>
+      <li data-step="3">Butacas</li>
+      <li data-step="4">Datos</li>
+      <li data-step="5">Confirmacion</li>
+    </ol>
+    <section id="reserva-contenido" aria-live="polite">
+      <p>Selecciona una pelicula desde la cartelera para comenzar.</p>
+      <a class="button" href="index.html">Ir a cartelera</a>
+    </section>
+  </main>
+  <script src="js/api.js"></script>
+  <script src="js/validaciones.js"></script>
+  <script src="js/butacas.js"></script>
+  <script src="js/reserva.js"></script>
+</body>
+</html>

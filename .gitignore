@@ -1,0 +1,18 @@
+# Compilados
+*.exe
+*.o
+*.obj
+*.dll
+*.lib
+*.pdb
+
+# Builds y temporales
+build/
+out/
+*.tmp
+
+# Editor y sistema operativo
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

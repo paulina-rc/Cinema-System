@@ -1,0 +1,7 @@
+.steps { display: flex; flex-wrap: wrap; gap: .75rem; padding: 0; list-style: none; }
+.steps li { padding: .5rem .75rem; border-radius: 2rem; background: #e2e5ea; }
+.steps li[aria-current="step"] { background: #174ea6; color: white; }
+.seat-map { display: grid; gap: .5rem; justify-content: start; }
+.seat { min-width: 2.5rem; min-height: 2.5rem; }
+.seat[aria-pressed="true"] { background: #16834a; }
+.seat:disabled { background: #777; cursor: not-allowed; }
