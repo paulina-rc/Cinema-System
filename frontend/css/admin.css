@@ -1,5 +1,0 @@
-form { max-width: 42rem; margin-block: 1rem 2rem; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-th, td { padding: .75rem; border-bottom: 1px solid #e2e5ea; text-align: left; }
-.admin-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
