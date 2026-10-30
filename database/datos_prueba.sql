@@ -10,7 +10,7 @@ PRAGMA foreign_keys = ON;
 INSERT INTO salas (nombre, agrupaciones, butacas_por_agrupacion)
 VALUES ('Sala 1', 5, 8);
 
--- Genera las butacas de la Sala 1.
+
 -- Lee la configuracion de la sala, asi que si cambias 5 u 8
 -- arriba, las butacas se generan solas con el nuevo tamano.
 WITH RECURSIVE
