@@ -23,38 +23,185 @@ h3 {
 }
 
 
+.nav-link {
+    text-decoration: none;       /* Quita el subrayado original */
+    color: #F2EDE4;                /* Color del texto */
+    position: relative;           /* Permite posicionar el subrayado */
+    padding-bottom: 8px;          /* Espacio debajo del texto */
+    font-family: Archivo, sans-serif;         
+}
+
+.nav-link:hover {
+    border-bottom: 3px solid #f5c542; /* Subrayado al pasar el mouse */
+}
+
 .cartelera-header {
-    display: flex;                 /* Coloca los elementos en una fila */
-    justify-content: space-between; /* Separa el título y el botón */
-    align-items: center;           /* Los centra verticalmente */
-    max-width: 1160px;              /* Limita el ancho del encabezado */
-    margin: 40px auto;              /* Centra el contenedor y da espacio */
-    padding: 0 20px;                /* Agrega espacio a los lados */
+    display: flex;                   /* Coloca título y botón en una fila */
+    justify-content: space-between;  /* Título izquierda, botón derecha */
+    align-items: center;             /* Centra ambos verticalmente */
+    max-width: 1160px;                /* Ancho del contenido */
+    width: 90%;                       /* Ocupa el 90% del espacio */
+    margin: 40px auto;                /* Centra todo horizontalmente */
 }
 
 .cartelera-titulos p {
-    font-size: 13px;                /* Tamaño del texto pequeño */
-    letter-spacing: 2px;            /* Separa las letras */
-    color: #b9b5c8;                 /* Color gris claro */
-    margin: 0 0 4px;   
-    font-family: Archivo, sans-serif;             /* Espacio debajo del texto */
+    font-size: 13px;                  /* Tamaño del texto pequeño */
+    letter-spacing: 2px;              /* Espacio entre letras */
+    color: #b9b5c8;                   /* Color gris claro */
+    margin: 0 0 4px;                  /* Separación inferior */
 }
 
 .cartelera-titulos h1 {
-    font-size: 56px;                /* Tamaño grande del título */
-    color: #f5f0e8;                 /* Color crema */
-    margin: 0;                      /* Quita los márgenes predeterminados */
-    line-height: 1;    
-    font-family: 'Big Shoulders Display', sans-serif;             /* Reduce el espacio vertical */
+    font-size: 56px;                  /* Tamaño del título */
+    color: #f5f0e8;                   /* Color crema */
+    margin: 0;                        /* Elimina márgenes */
+    font-family: 'Big Shoulders Display', sans-serif; 
+    line-height: 1;                   /* Ajusta altura */
 }
 
 .btn-reservar {
-    background-color: #f5f0e8;      /* Fondo crema */
-    color: #111014;                 /* Texto oscuro */
-    border: none;                   /* Quita el borde */
-    border-radius: 30px;            /* Redondea el botón */
-    padding: 15px 30px;             /* Espacio interno */
-    font-size: 14px;                /* Tamaño del texto */
-    font-weight: bold;              /* Texto en negrita */
-    cursor: pointer;                /* Muestra la mano al pasar */
+    background-color: #f5f0e8;        /* Fondo crema */
+    color: #111014;                   /* Texto oscuro */
+    border: none;                     /* Sin borde */
+    border-radius: 30px;              /* Bordes redondeados */
+    padding: 15px 30px;               /* Espacio interno */
+    font-size: 14px;                  /* Tamaño del texto */
+    font-weight: bold;                /* Texto en negrita */
+    cursor: pointer;                  /* Cursor de mano */
 }
+
+
+/* CONTENEDOR DE TODAS LAS PELÍCULAS */
+.peliculas-container {
+    display: grid; /* Organiza las tarjetas en una cuadrícula */
+    grid-template-columns: repeat(4, 1fr); /* Crea 4 columnas iguales */
+    gap: 24px; /* Espacio entre tarjetas */
+    max-width: 1160px; /* Ancho máximo */
+    width: 90%; /* Ocupa el 90% de la pantalla */
+    margin: 30px auto; /* Centra las tarjetas */
+}
+
+/* TARJETA INDIVIDUAL */
+.pelicula {
+    background-color: #1c1920; /* Fondo oscuro */
+    border: 1px solid #35303b; /* Borde de la tarjeta */
+    border-radius: 14px; /* Esquinas redondeadas */
+    overflow: hidden; /* Evita que el contenido salga de la tarjeta */
+}
+
+/* ESPACIO DEL PÓSTER */
+.poster {
+    height: 400px; /* Altura del póster */
+    background-color: #29232e; /* Fondo morado oscuro */
+    display: flex; /* Activa flexbox */
+    justify-content: center; /* Centra horizontalmente */
+    align-items: center; /* Centra verticalmente */
+    color: #aaa0b5; /* Color del texto */
+    font-size: 12px; /* Tamaño del texto */
+    letter-spacing: 1px; /* Separación de letras */
+    
+}
+
+/* INFORMACIÓN DE LA PELÍCULA */
+.pelicula-info {
+    padding: 15px; /* Espacio interno */
+    color: #f5f0e8; /* Color del texto */
+    
+}
+
+.pelicula-info h3 {
+    font-size: 16px; /* Tamaño del título */
+    margin: 0 0 8px;
+     /* Separación inferior */
+}
+/* HORARIOS */
+.horarios {
+    display: flex; /* Coloca los horarios en fila */
+    flex-wrap: wrap; /* Permite que pasen a otra línea */
+    gap: 8px; /* Espacio entre horarios */
+}
+
+.horarios span {
+    border: 1px solid #45404c; /* Borde de cada horario */
+    border-radius: 20px; /* Redondea los horarios */
+    padding: 5px 10px; /* Espacio interno */
+    font-size: 12px; /* Tamaño del texto */
+    color: #f5f0e8; /* Color del texto */
+}
+
+
+/* CONTENEDOR PRINCIPAL */
+.carrusel {
+    position: relative;       /* Permite posicionar botones encima */
+    max-width: 1160px;        /* Ancho máximo */
+    width: 90%;               /* Ocupa el 90% de la pantalla */
+    height: 400px;            /* Altura del carrusel */
+    margin: 40px auto;        /* Centra el carrusel */
+    overflow: hidden;         /* Oculta las imágenes fuera del carrusel */
+    border-radius: 15px;      /* Redondea las esquinas */
+}
+
+/* CONTENEDOR DE SLIDES */
+.carrusel-imagenes {
+    display: flex;            /* Coloca las imágenes en fila */
+    height: 100%;             /* Ocupa toda la altura */
+    transition: transform 0.5s ease; /* Animación al cambiar */
+}
+
+/* CADA IMAGEN */
+.slide {
+    min-width: 100%;           /* Cada slide ocupa todo el carrusel */
+    height: 100%;              /* Ocupa toda la altura */
+}
+
+.slide img {
+    width: 100%;               /* Ocupa todo el ancho */
+    height: 100%;              /* Ocupa toda la altura */
+    object-fit: cover;         /* Ajusta la imagen sin deformarla */
+}
+
+/* BOTONES DE NAVEGACIÓN */
+.carrusel-btn {
+    position: absolute;        /* Posicionamiento sobre las imágenes */
+    top: 50%;                  /* Ubicación vertical */
+    transform: translateY(-50%); /* Centrado vertical */
+    background: rgba(0,0,0,0.6); /* Fondo semitransparente */
+    color: white;              /* Color de la flecha */
+    border: none;              /* Sin bordes */
+    border-radius: 50%;        /* Forma circular */
+    width: 45px;               /* Ancho */
+    height: 45px;              /* Alto */
+    cursor: pointer;           /* Cursor de mano */
+    font-size: 20px;           /* Tamaño de flecha */
+}
+
+.anterior {
+    left: 15px;                /* Separación del lado izquierdo */
+}
+
+.siguiente {
+    right: 15px;               /* Separación del lado derecho */
+}
+
+/* INDICADORES */
+.indicadores {
+    position: absolute;        /* Se posicionan sobre el carrusel */
+    bottom: 15px;              /* Separación inferior */
+    left: 50%;                 /* Centro horizontal */
+    transform: translateX(-50%);
+    display: flex;             /* Coloca los puntos en fila */
+    gap: 10px;                 /* Espacio entre puntos */
+}
+
+.punto {
+    width: 10px;               /* Ancho del punto */
+    height: 10px;              /* Alto del punto */
+    background: #aaa;          /* Color inactivo */
+    border-radius: 50%;        /* Forma circular */
+    cursor: pointer;           /* Permite seleccionarlo */
+}
+
+.punto.activo {
+    background: #f5c542;       /* Amarillo para el activo */
+}
+
