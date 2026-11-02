@@ -1,8 +1,8 @@
 // =============================================================================
-//  database.cpp
+//  Database.cpp
 //  -----------------------------------------------------------------------------
 //  Implementacion de la clase Database con la API en C de SQLite.
-//  La clase Sentencia se copio del demo del profe sin cambios.
+//  La clase Sentencia se copio del demo del profe; solo se le agrego reiniciar().
 //
 //  Flujo de cada consulta:
 //     1. sqlite3_prepare_v2()  -> "compila" el texto SQL
@@ -13,7 +13,7 @@
 //
 //  Seguridad: nunca se concatena texto del usuario en el SQL; siempre ? + bind.
 // =============================================================================
-#include "database.h"
+#include "Database.h"
 
 #include <stdexcept>
 
@@ -50,6 +50,13 @@ public:
         throw std::runtime_error(std::string("Error ejecutando SQL: ") + sqlite3_errmsg(db_));
     }
 
+    // Deja la sentencia lista para ejecutarse otra vez con valores nuevos
+    // (sirve para insertar muchas filas con un solo prepare).
+    void reiniciar() {
+        sqlite3_reset(stmt_);
+        sqlite3_clear_bindings(stmt_);
+    }
+
     // Las columnas se numeran desde 0.
     int         entero(int col) { return sqlite3_column_int(stmt_, col); }
     double      real(int col)   { return sqlite3_column_double(stmt_, col); }
@@ -75,6 +82,18 @@ Sala leerSala(Sentencia& s) {
     sala.butacas_por_agrupacion = s.entero(3);
     sala.habilitada             = s.entero(4);
     return sala;
+}
+
+const std::string COLUMNAS_BUTACA = "id, sala_id, agrupacion, numero, habilitada";
+
+Butaca leerButaca(Sentencia& s) {
+    Butaca b;
+    b.id         = s.entero(0);
+    b.sala_id    = s.entero(1);
+    b.agrupacion = s.entero(2);
+    b.numero     = s.entero(3);
+    b.habilitada = s.entero(4);
+    return b;
 }
 
 } // namespace
@@ -121,4 +140,94 @@ std::vector<Sala> Database::listarSalas() {
     Sentencia s(db_, "SELECT " + COLUMNAS_SALA + " FROM salas ORDER BY nombre");
     while (s.siguiente()) resultado.push_back(leerSala(s));
     return resultado;
+}
+
+std::optional<Sala> Database::obtenerSala(int id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "SELECT " + COLUMNAS_SALA + " FROM salas WHERE id = ?");
+    s.bind(1, id);
+    if (s.siguiente()) return leerSala(s);
+    return std::nullopt;
+}
+
+std::optional<int> Database::crearSala(const std::string& nombre, int agrupaciones,
+                                       int butacas_por_agrupacion) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // 1. El nombre no se puede repetir (tambien lo protege el UNIQUE de la tabla).
+    {
+        Sentencia existe(db_, "SELECT COUNT(*) FROM salas WHERE nombre = ?");
+        existe.bind(1, nombre);
+        existe.siguiente();
+        if (existe.entero(0) > 0) return std::nullopt;
+    }
+
+    // 2. Transaccion: la sala y sus butacas se guardan TODAS o NINGUNA.
+    //    Si algo falla a la mitad, ROLLBACK deshace lo que se alcanzo a insertar
+    //    y no queda una sala con butacas incompletas.
+    ejecutar("BEGIN TRANSACTION;");
+    try {
+        Sentencia sala(db_, "INSERT INTO salas (nombre, agrupaciones, butacas_por_agrupacion) "
+                            "VALUES (?, ?, ?)");
+        sala.bind(1, nombre);
+        sala.bind(2, agrupaciones);
+        sala.bind(3, butacas_por_agrupacion);
+        sala.siguiente();
+        int sala_id = static_cast<int>(sqlite3_last_insert_rowid(db_));
+
+        // 3. Generar la distribucion recorriendo la matriz:
+        //    fila = agrupacion, columna = numero de butaca.
+        //    Se prepara UNA sentencia y se reutiliza en cada vuelta (reset).
+        Sentencia butaca(db_, "INSERT INTO butacas (sala_id, agrupacion, numero) VALUES (?, ?, ?)");
+        for (int a = 0; a < agrupaciones; a++) {
+            for (int n = 0; n < butacas_por_agrupacion; n++) {
+                butaca.reiniciar();
+                butaca.bind(1, sala_id);
+                butaca.bind(2, a);
+                butaca.bind(3, n);
+                butaca.siguiente();
+            }
+        }
+
+        ejecutar("COMMIT;");
+        return sala_id;
+    } catch (...) {
+        ejecutar("ROLLBACK;");
+        throw;   // el error sigue hacia main.cpp, que responde 500
+    }
+}
+
+bool Database::cambiarHabilitadaSala(int id, int habilitada) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "UPDATE salas SET habilitada = ? WHERE id = ?");
+    s.bind(1, habilitada);
+    s.bind(2, id);
+    s.siguiente();
+    return sqlite3_changes(db_) > 0;
+}
+
+// =============================================================================
+//  Butacas
+// =============================================================================
+std::vector<Butaca> Database::listarButacas(int sala_id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    std::vector<Butaca> resultado;
+    Sentencia s(db_, "SELECT " + COLUMNAS_BUTACA + " FROM butacas "
+                     "WHERE sala_id = ? ORDER BY agrupacion, numero");
+    s.bind(1, sala_id);
+    while (s.siguiente()) resultado.push_back(leerButaca(s));
+    return resultado;
+}
+
+bool Database::cambiarHabilitadaButaca(int id, int habilitada) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "UPDATE butacas SET habilitada = ? WHERE id = ?");
+    s.bind(1, habilitada);
+    s.bind(2, id);
+    s.siguiente();
+    return sqlite3_changes(db_) > 0;
 }

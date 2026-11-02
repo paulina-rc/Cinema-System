@@ -1,34 +1,40 @@
-# Manual de ejecucion
+# Manual de ejecución
 
 ## Requisitos
 
-- Windows y un compilador C++17 en `PATH`.
-- SQLite.
-- Las cabeceras de cpp-httplib y nlohmann/json en `backend/include/`.
+- Windows con MSYS2 y el paquete `mingw-w64-ucrt-x86_64-gcc`.
+- `C:\msys64\ucrt64\bin` agregado al `PATH` de Windows.
 
-Las dependencias externas no se descargan ni se incluyen automaticamente.
+Las librerías cpp-httplib, nlohmann/json y SQLite ya están incluidas en
+`backend/third_party/`.
 
-## Preparar la base de datos
+## Compilar y ejecutar
 
-Desde la raiz del repositorio:
+Desde la carpeta raíz del proyecto (por ejemplo en la terminal de VS Code):
 
 ```text
-sqlite3 database/cine.db ".read database/schema.sql"
-sqlite3 database/cine.db ".read database/datos_prueba.sql"
+.\compilar.bat
+.\iniciar.bat
 ```
 
-## Backend
+`iniciar.bat` abre el navegador en `http://localhost:8080`. El servidor
+entrega las páginas de `frontend/` y responde las rutas `/api/...`.
 
-El backend todavia es un esqueleto: las rutas HTTP y servicios de negocio no
-estan implementados. `backend\compilar.bat` lo indica y termina con error
-intencionalmente para no dar la impresion de que el servidor esta listo.
+## Cuándo recompilar
 
-## Frontend
+| Si cambia... | Qué hacer |
+|---|---|
+| HTML, CSS o JS de `frontend/` | Recargar el navegador (`Ctrl + F5`) |
+| Archivos `.cpp` o `.h` de `backend/src/` | `Ctrl + C` al servidor, `.\compilar.bat`, `.\iniciar.bat` |
 
-Abre `frontend\index.html` en un navegador cuando el backend este disponible.
-La API del frontend apunta por defecto a `http://localhost:8080`.
+Si al compilar sale `Permission denied`, el servidor sigue abierto:
+deténgalo con `Ctrl + C` antes de compilar.
 
-## Diagramas
+## Probar la API sin pantallas
 
-Los diagramas PNG y las capturas se agregaran cuando se definan y validen los
-flujos de la aplicacion.
+Con el servidor encendido, abrir `http://localhost:8080`, presionar `F12` →
+Consola y escribir, por ejemplo:
+
+```js
+fetch('/api/salas').then(r => r.json()).then(console.log)
+```

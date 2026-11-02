@@ -29,7 +29,7 @@ REM --- 2. Nuestro codigo C++ --------------------------------------------------
 echo [2/3] Compilando codigo C++...
 set FLAGS=-std=c++17 -O2 -Wall -D_WIN32_WINNT=0x0A00 -Ibackend\src -Ibackend\third_party\httplib -Ibackend\third_party\json -Ibackend\third_party\sqlite
 g++ %FLAGS% -c backend\src\main.cpp     -o build\main.o     || goto :error
-g++ %FLAGS% -c backend\src\database.cpp -o build\database.o || goto :error
+g++ %FLAGS% -c backend\src\Database.cpp -o build\database.o || goto :error
 
 REM --- 3. Enlazar -------------------------------------------------------------
 echo [3/3] Enlazando...

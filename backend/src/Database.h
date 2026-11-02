@@ -1,5 +1,5 @@
 // =============================================================================
-//  database.h
+//  Database.h
 //  -----------------------------------------------------------------------------
 //  CAPA DE ACCESO A DATOS (igual que en el demo del profe).
 //
@@ -9,6 +9,7 @@
 #pragma once
 
 #include <mutex>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -31,6 +32,27 @@ public:
     // ---------------- Salas ----------------
     // R: lista todas las salas, incluidas las inhabilitadas.
     std::vector<Sala> listarSalas();
+
+    // R: busca una sala por id. Si no existe devuelve std::nullopt.
+    std::optional<Sala> obtenerSala(int id);
+
+    // C: crea la sala Y genera todas sus butacas (una por posicion de la
+    //    matriz agrupaciones x butacas_por_agrupacion).
+    //    Devuelve el id nuevo, o std::nullopt si ya existe una sala con ese nombre.
+    std::optional<int> crearSala(const std::string& nombre, int agrupaciones,
+                                 int butacas_por_agrupacion);
+
+    // U: habilita (1) o inhabilita (0) una sala sin borrarla.
+    //    Devuelve false si la sala no existe.
+    bool cambiarHabilitadaSala(int id, int habilitada);
+
+    // ---------------- Butacas ----------------
+    // R: todas las butacas de una sala, ordenadas como la matriz.
+    std::vector<Butaca> listarButacas(int sala_id);
+
+    // U: marca una butaca como danada (0) o la repara (1).
+    //    Devuelve false si la butaca no existe.
+    bool cambiarHabilitadaButaca(int id, int habilitada);
 
 private:
     sqlite3*   db_ = nullptr;   // "Conexion" a la base de datos

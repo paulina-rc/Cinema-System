@@ -96,16 +96,17 @@ CREATE TABLE IF NOT EXISTS reservaciones (
     funcion_id  INTEGER NOT NULL,
     butaca_id   INTEGER NOT NULL,
     cliente_id  INTEGER NOT NULL,
-    fecha_hora  TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),
+    fecha       TEXT    NOT NULL,   -- dia de la funcion, ej. '2026-11-02'
+    fecha_hora  TEXT    NOT NULL DEFAULT (datetime('now', 'localtime')),  -- cuando se hizo la reserva
 
     FOREIGN KEY (funcion_id) REFERENCES funciones(id),
     FOREIGN KEY (butaca_id)  REFERENCES butacas(id),
     FOREIGN KEY (cliente_id) REFERENCES clientes(id),
 
     -- La regla mas importante del sistema:
-    -- una butaca solo puede reservarse UNA vez por funcion.
+    -- una butaca solo puede reservarse UNA vez por funcion y por dia.
     -- Aunque el backend falle, la base de datos rechaza la doble reserva.
-    UNIQUE (funcion_id, butaca_id)
+    UNIQUE (funcion_id, butaca_id, fecha)
 );
 
 -- -------------------------------------------------------------
@@ -113,4 +114,4 @@ CREATE TABLE IF NOT EXISTS reservaciones (
 -- -------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_butacas_sala         ON butacas(sala_id);
 CREATE INDEX IF NOT EXISTS idx_peliculas_fechas     ON peliculas(fecha_inicio, fecha_fin);
-CREATE INDEX IF NOT EXISTS idx_reservaciones_funcion ON reservaciones(funcion_id);
+CREATE INDEX IF NOT EXISTS idx_reservaciones_funcion ON reservaciones(funcion_id, fecha);

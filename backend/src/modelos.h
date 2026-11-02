@@ -32,3 +32,23 @@ inline void to_json(json& j, const Sala& s) {
         {"habilitada",             s.habilitada}
     };
 }
+
+// -------------------------------------------------------------- Tabla butacas
+// (agrupacion, numero) = (fila, columna) de la matriz de la sala.
+struct Butaca {
+    int id = 0;
+    int sala_id = 0;
+    int agrupacion = 0;   // Empieza en 0
+    int numero = 0;       // Empieza en 0
+    int habilitada = 1;   // 1 = sirve, 0 = danada / fuera de servicio
+};
+
+inline void to_json(json& j, const Butaca& b) {
+    j = json{
+        {"id",         b.id},
+        {"sala_id",    b.sala_id},
+        {"agrupacion", b.agrupacion},
+        {"numero",     b.numero},
+        {"habilitada", b.habilitada}
+    };
+}
