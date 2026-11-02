@@ -19,11 +19,11 @@ funcional.
 
 ## Requisitos
 
-- Compilador C++17 disponible en `PATH`.
+- Compilador C++17 disponible en `PATH`
 - SQLite.
-- cpp-httplib y nlohmann/json; coloca sus cabeceras en `backend/include/`.
+- cpp-httplib y nlohmann/json; coloca sus cabeceras en `backend/include/`
 
-Las dependencias externas no se incluyen en este repositorio.
+Las dependencias externas no se incluyen en este repositorio
 
 ## Base de datos
 
