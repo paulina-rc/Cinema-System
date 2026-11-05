@@ -3,232 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Reservar butacas | IMPERIUM Cinemas</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Archivo:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="css/reserva.css">
 </head>
 <body>
-    
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Salas y butacas | IMPERIUM Cinemas</title>
+    <!-- ENCABEZADO -->
+    <header class="encabezado">
+        <a href="index.html" class="marca">IMPERIUM CINEMAS</a>
+        <button type="button" class="link-cancelar" id="btnCancelar">Cancelar y volver</button>
+    </header>
 
-    <link rel="stylesheet" href="css/salas.css">
-</head>
+    <main class="contenedor">
 
-<body>
-
-    <!-- MENÚ LATERAL -->
-    <aside class="sidebar">
-
-        <div class="logo">
-            <h2>IMPERIUM Cinemas</h2>
-            <p>ADMINISTRACIÓN</p>
-        </div>
-
-        <nav class="menu">
-            <a href="peliculas.html">Películas</a>
-            <a href="salas.html" class="seleccionado">Salas y butacas</a>
-            <a href="index.html">Ver cartelera</a>
-        </nav>
-
-    </aside>
+        <!-- BARRA DE PASOS: el JS marca el paso actual y los completados -->
+        <ol class="pasos" id="barraPasos">
+            <li data-paso="1">1 · Datos</li>
+            <li data-paso="2">2 · Película</li>
+            <li data-paso="3">3 · Cantidad</li>
+            <li data-paso="4">4 · Butacas</li>
+            <li data-paso="5">5 · Confirmar</li>
+        </ol>
 
 
-    <!-- CONTENIDO PRINCIPAL -->
-    <main class="contenido">
+        <!-- ============ PASO 1: DATOS DEL CLIENTE ============ -->
+        <section class="paso paso-angosto" id="paso1">
+            <h1 class="titulo">Tus datos</h1>
+            <p class="subtitulo">Los usamos solo para asociar tu reservación.</p>
 
-        <h1>SALAS Y BUTACAS</h1>
-
-        <!-- FORMULARIO Y LISTADO DE SALAS -->
-        <section class="seccion-superior">
-
-            <!-- FORMULARIO -->
-            <div class="card formulario">
-
-                <h3>Nueva sala</h3>
-
-                <label for="nombreSala">Nombre de la sala</label>
-                <input type="text" id="nombreSala" placeholder="Sala 4">
-
-                <label for="agrupaciones">Cantidad de agrupaciones</label>
-                <input type="number" id="agrupaciones" placeholder="2">
-
-                <label for="butacas">Butacas por agrupación</label>
-                <input type="number" id="butacas" placeholder="42">
-
-                <button class="btn-crear">
-                    Crear sala y generar butacas
-                </button>
-
-            </div>
-
-
-            <!-- LISTADO DE SALAS -->
-            <div class="lista-salas">
-
-                <div class="sala">
-                    <div>
-                        <h3>Sala 1</h3>
-                        <p>2 agrupaciones × 40 butacas</p>
-                    </div>
-
-                    <div class="acciones">
-                        <span class="estado activa">Activa</span>
-                        <button class="btn-estado">Inhabilitar</button>
-                    </div>
+            <form id="formCliente" novalidate>
+                <div class="campo">
+                    <label for="nombre">Nombre completo</label>
+                    <input type="text" id="nombre" placeholder="María Rodríguez" maxlength="60" autocomplete="name">
+                    <p class="error-campo" id="errorNombre"></p>
                 </div>
 
-
-                <div class="sala sala-seleccionada">
-                    <div>
-                        <h3>Sala 2</h3>
-                        <p>2 agrupaciones × 42 butacas</p>
-                    </div>
-
-                    <div class="acciones">
-                        <span class="estado activa">Activa</span>
-                        <button class="btn-estado">Inhabilitar</button>
-                    </div>
+                <div class="campo">
+                    <label for="telefono">Número de teléfono</label>
+                    <input type="tel" id="telefono" placeholder="8888 8888" maxlength="9" autocomplete="tel">
+                    <p class="error-campo" id="errorTelefono"></p>
                 </div>
 
-
-                <div class="sala">
-                    <div>
-                        <h3>Sala 3</h3>
-                        <p>3 agrupaciones × 30 butacas</p>
-                    </div>
-
-                    <div class="acciones">
-                        <span class="estado inhabilitada">Inhabilitada</span>
-                        <button class="btn-estado">Habilitar</button>
-                    </div>
-                </div>
-
-            </div>
-
+                <button type="submit" class="btn btn-principal btn-ancho">Continuar</button>
+            </form>
         </section>
 
 
-        <!-- MAPA DE BUTACAS -->
-        <section class="card mapa">
+        <!-- ============ PASO 2: PELÍCULA Y HORARIO ============ -->
+        <section class="paso paso-medio" id="paso2" hidden>
+            <h1 class="titulo">Elige película y horario</h1>
+            <p class="subtitulo">Solo aparecen las películas que están en exhibición hoy.</p>
 
-            <div class="mapa-header">
-                <h3>Mapa de Sala 2</h3>
-                <p>Toca una butaca para marcarla fuera de servicio</p>
+            <!-- El JS llena esta lista con GET /api/cartelera -->
+            <div class="lista-peliculas" id="listaPeliculas"></div>
+
+            <div class="acciones">
+                <button type="button" class="btn btn-secundario" data-ir="1">Atrás</button>
+                <button type="button" class="btn btn-principal" id="btnPaso2" disabled>Continuar</button>
+            </div>
+        </section>
+
+
+        <!-- ============ PASO 3: CANTIDAD ============ -->
+        <section class="paso paso-centrado" id="paso3" hidden>
+            <p class="detalle-funcion" id="detalleFuncion3"></p>
+            <h1 class="titulo">¿Cuántas butacas?</h1>
+
+            <div class="contador">
+                <button type="button" class="btn-circulo" id="btnMenos" aria-label="Quitar una butaca">−</button>
+                <span class="contador-numero" id="cantidad">1</span>
+                <button type="button" class="btn-circulo" id="btnMas" aria-label="Agregar una butaca">+</button>
             </div>
 
+            <p class="nota" id="textoDisponibles"></p>
 
-            <div class="agrupaciones">
+            <div class="acciones acciones-centro">
+                <button type="button" class="btn btn-secundario" data-ir="2">Atrás</button>
+                <button type="button" class="btn btn-principal" id="btnPaso3">Elegir butacas</button>
+            </div>
+        </section>
 
-                <!-- PRIMERA AGRUPACIÓN -->
-                <div class="grupo-butacas">
 
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
+        <!-- ============ PASO 4: BUTACAS ============ -->
+        <section class="paso paso-butacas" id="paso4" hidden>
 
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
+            <div class="zona-mapa">
+                <div class="pantalla"></div>
+                <p class="pantalla-texto">PANTALLA</p>
 
-                    <div class="fila">
-                        <span></span><span></span><span class="fuera"></span>
-                        <span></span><span></span><span></span>
-                    </div>
+                <!-- El JS dibuja aquí un bloque por cada agrupación de la matriz -->
+                <div class="mapa" id="mapa"></div>
 
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
+                <div class="leyenda">
+                    <span><i class="muestra disponible"></i>Disponible</span>
+                    <span><i class="muestra seleccionada"></i>Tu selección</span>
+                    <span><i class="muestra ocupada"></i>Ocupada</span>
+                    <span><i class="muestra danada"></i>Fuera de servicio</span>
                 </div>
-
-
-                <!-- SEGUNDA AGRUPACIÓN -->
-                <div class="grupo-butacas">
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span></span>
-                    </div>
-
-                    <div class="fila">
-                        <span></span><span></span><span></span>
-                        <span></span><span></span><span class="fuera"></span>
-                    </div>
-
-                </div>
-
             </div>
 
+            <aside class="tarjeta resumen">
+                <h3 id="resumenPelicula"></h3>
+                <p class="gris" id="resumenFuncion"></p>
 
-            <!-- LEYENDA -->
-            <div class="leyenda">
+                <hr>
 
-                <div>
-                    <span class="ejemplo habilitada"></span>
-                    <p>Habilitada</p>
+                <p class="gris">Seleccionadas</p>
+                <p class="conteo"><strong id="resumenSeleccionadas">0</strong> de <span id="resumenCantidad">0</span></p>
+                <p class="lista-butacas" id="resumenButacas">—</p>
+
+                <p class="aviso" id="resumenAviso"></p>
+
+                <div class="fila-total">
+                    <span class="gris">Total</span>
+                    <strong id="resumenTotal">₡0</strong>
                 </div>
 
-                <div>
-                    <span class="ejemplo fuera-leyenda"></span>
-                    <p>Fuera de servicio</p>
+                <button type="button" class="btn btn-principal btn-ancho" id="btnPaso4" disabled>Continuar al pago</button>
+                <button type="button" class="link-subrayado" id="btnCambiarCantidad">Cambiar cantidad</button>
+            </aside>
+        </section>
+
+
+        <!-- ============ PASO 5: CONFIRMACIÓN ============ -->
+        <section class="paso paso-medio" id="paso5" hidden>
+
+            <!-- Antes de pagar: resumen tipo tiquete -->
+            <div id="bloqueConfirmar">
+                <h1 class="titulo">Confirma tu reserva</h1>
+
+                <div class="tarjeta tiquete">
+                    <div class="tiquete-datos">
+                        <div><p class="gris">Cliente</p><p id="tqCliente"></p></div>
+                        <div><p class="gris">Teléfono</p><p id="tqTelefono"></p></div>
+                        <div><p class="gris">Película</p><p id="tqPelicula"></p></div>
+                        <div><p class="gris">Función</p><p id="tqFuncion"></p></div>
+                        <div><p class="gris">Butacas</p><p id="tqButacas"></p></div>
+                        <div><p class="gris">Cantidad</p><p id="tqCantidad"></p></div>
+                    </div>
+                    <div class="tiquete-total">
+                        <span class="gris">Total a pagar</span>
+                        <strong id="tqTotal"></strong>
+                    </div>
                 </div>
 
+                <div class="acciones">
+                    <button type="button" class="btn btn-secundario" data-ir="4">Atrás</button>
+                    <button type="button" class="btn btn-principal btn-crece" id="btnPagar">Pagar (simulado)</button>
+                </div>
             </div>
 
+            <!-- Después de pagar: el JS lo muestra cuando el backend confirma -->
+            <div class="tarjeta exito" id="bloqueExito" hidden>
+                <p class="exito-etiqueta">PAGO SIMULADO</p>
+                <h2>Reserva confirmada</h2>
+                <p id="textoExito"></p>
+                <a href="index.html" class="btn btn-exito">Volver a la cartelera</a>
+                <p class="nota" id="textoRegreso"></p>
+            </div>
         </section>
 
     </main>
 
-</body>
-</html>
+    <!-- Mensajes de error que vienen del backend -->
+    <div class="toast" id="toast" role="alert" hidden></div>
 
+    <script src="js/reserva.js"></script>
 </body>
 </html>

@@ -1,326 +1,455 @@
+/* =============================================================================
+   reserva.css - Estilos de la página de reservación (pasos 1 a 5)
+   Colores y letras de la guía de estilo del proyecto.
+   ============================================================================= */
 
-/* CONFIGURACIÓN GENERAL */
-* {
-    margin: 0;                   /* Elimina márgenes predeterminados */
-    padding: 0;                  /* Elimina espacios internos */
-    box-sizing: border-box;      /* Incluye padding y bordes en las medidas */
+:root {
+    --fondo:        #0F0E13;
+    --tarjeta:      #1A1820;
+    --campo:        #1C1A22;
+    --borde:        #2E2A37;
+    --crema:        #F2EDE4;
+    --gris:         #A9A4B3;
+    --dorado:       #E9B949;
+    --verde:        #2FA36B;
+    --rojo:         #8E2A31;
+    --rojo-texto:   #F07A80;
+    --exito-fondo:  #13261C;
+    --exito-borde:  #245C3D;
+    --exito-texto:  #7DD3A5;
+
+    --titulos: 'Big Shoulders Display', sans-serif;
+    --texto:   'Archivo', sans-serif;
 }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-    background-color: #100e13;   /* Fondo oscuro */
-    color: #f5f0e8;              /* Color principal del texto */
-    font-family: Arial, sans-serif; /* Tipo de letra */
-    min-height: 100vh;           /* Altura mínima de pantalla */
+    background: var(--fondo);
+    color: var(--crema);
+    font-family: var(--texto);
+    min-height: 100vh;
 }
 
+button { font-family: inherit; }
+[hidden] { display: none !important; }
 
-/* MENÚ LATERAL */
-.sidebar {
-    width: 170px;                /* Ancho del menú */
-    height: 100vh;               /* Ocupa toda la altura */
-    background-color: #17141b;   /* Fondo del menú */
-    border-right: 1px solid #302a35; /* Línea divisoria */
-    position: fixed;             /* Mantiene el menú fijo */
-    top: 0;
-    left: 0;
-}
 
-.logo {
-    padding: 14px 13px;          /* Espacio interno */
-    border-bottom: 1px solid #302a35;
-    
-}
-
-.logo h2 {
-    color: #e9b844;              /* Amarillo del logo */
-    font-size: 14px;
-    font-family: Georgia, serif;
-    font-family: 'Big Shoulders Display', sans-serif;
-}
-
-.logo p {
-    color: #aaa2b1;
-    font-size: 13px;
-    letter-spacing: 2px;         /* Separación de letras */
-    margin-top: 6px;
-    font-family: Archivo, sans-serif; 
-}
-
-.menu {
+/* ---------------- Encabezado ---------------- */
+.encabezado {
     display: flex;
-    flex-direction: column;      /* Enlaces uno debajo del otro */
-    padding: 15px 12px;
-    gap: 9px;                    /* Espacio entre enlaces */
+    justify-content: space-between;
+    align-items: center;
+    padding: 22px 5%;
+    border-bottom: 1px solid var(--borde);
 }
 
-.menu a {
-    text-decoration: none;       /* Quita el subrayado */
-    color: #bdb7c2;
-    font-size: 14px;
-    padding: 11px 9px;
-    border-radius: 8px;
+.marca {
+    font-family: var(--titulos);
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--dorado);
+    text-decoration: none;
+    letter-spacing: 0.5px;
 }
 
-.menu a:hover,
-.menu a.seleccionado {
-    background-color: #29232e;   /* Fondo del enlace seleccionado */
-    color: #f5f0e8;
+.link-cancelar {
+    background: none;
+    border: none;
+    color: var(--gris);
+    font-size: 15px;
+    cursor: pointer;
+}
+.link-cancelar:hover { color: var(--crema); }
+
+
+/* ---------------- Contenedor y barra de pasos ---------------- */
+.contenedor {
+    width: 90%;
+    max-width: 1160px;
+    margin: 0 auto;
+    padding: 28px 0 60px;
 }
 
-
-/* CONTENIDO PRINCIPAL */
-.contenido {
-    margin-left: 170px;          /* Deja espacio para el menú */
-    padding: 15px 33px;
-}
-
-.contenido > h1 {
-    font-size: 27px;
-    font-family: Georgia, serif;
-    margin-bottom: 14px;
-    font-family: Archivo, sans-serif; 
-}
-
-
-/* DISTRIBUCIÓN SUPERIOR */
-.seccion-superior {
+.pasos {
+    list-style: none;
     display: grid;
-    grid-template-columns: 240px 1fr; /* Formulario y listado */
-    gap: 15px;
-    align-items: start;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin-bottom: 56px;
+}
+
+.pasos li {
+    border-top: 3px solid var(--borde);
+    padding-top: 10px;
+    font-size: 13px;
+    color: var(--gris);
+}
+.pasos li.hecho  { border-top-color: var(--dorado); }
+.pasos li.actual { border-top-color: var(--dorado); color: var(--crema); font-weight: 600; }
+
+
+/* ---------------- Textos generales ---------------- */
+.titulo {
+    font-family: var(--titulos);
+    font-size: 52px;
+    font-weight: 800;
+    text-transform: uppercase;
+    line-height: 1;
+}
+
+.subtitulo { color: var(--gris); margin: 8px 0 32px; }
+.gris      { color: var(--gris); font-size: 14px; }
+.nota      { color: var(--gris); font-size: 14px; margin-top: 16px; }
+
+
+/* ---------------- Anchos de cada paso ---------------- */
+.paso-angosto  { max-width: 520px; margin: 0 auto; }
+.paso-medio    { max-width: 900px; margin: 0 auto; }
+.paso-centrado { text-align: center; }
+
+
+/* ---------------- Botones ---------------- */
+.btn {
+    display: inline-block;
+    border-radius: 999px;
+    padding: 14px 28px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    text-align: center;
+    border: 1px solid transparent;
+    transition: opacity 0.15s, background 0.15s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-principal  { background: var(--crema); color: #111014; }
+.btn-principal:not(:disabled):hover { background: #fff; }
+.btn-secundario { background: transparent; color: var(--crema); border-color: var(--borde); }
+.btn-secundario:hover { border-color: var(--gris); }
+.btn-ancho { width: 100%; }
+.btn-crece { flex: 1; }
+
+.acciones {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    margin-top: 28px;
+}
+.acciones-centro { justify-content: center; }
+
+.link-subrayado {
+    display: block;
+    margin: 14px auto 0;
+    background: none;
+    border: none;
+    color: var(--gris);
+    text-decoration: underline;
+    font-size: 14px;
+    cursor: pointer;
 }
 
 
-/* TARJETAS GENERALES */
-.card {
-    background-color: #1c1920;
-    border: 1px solid #302a35;
+/* ---------------- Paso 1: formulario ---------------- */
+.campo { margin-bottom: 20px; }
+
+.campo label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.campo input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--campo);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    color: var(--crema);
+    font-size: 16px;
+    font-family: inherit;
+}
+.campo input:focus  { outline: none; border-color: var(--dorado); }
+.campo input.invalido { border-color: var(--rojo-texto); }
+
+.error-campo {
+    color: var(--rojo-texto);
+    font-size: 13px;
+    margin-top: 6px;
+    min-height: 16px;
+}
+
+
+/* ---------------- Paso 2: películas ---------------- */
+.lista-peliculas { display: flex; flex-direction: column; gap: 14px; }
+
+.pelicula {
+    display: flex;
+    gap: 20px;
+    padding: 16px;
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 12px;
+}
+.pelicula.elegida { border-color: var(--dorado); }
+
+.poster {
+    width: 72px;
+    height: 104px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    background: #24212C;
+    display: grid;
+    place-items: center;
+    font-family: var(--titulos);
+    font-size: 28px;
+    color: var(--gris);
+}
+
+.pelicula h3   { font-size: 18px; margin-bottom: 4px; }
+.pelicula .gris { font-size: 13px; margin-bottom: 12px; }
+
+.horarios { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.horario {
+    padding: 10px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--borde);
+    background: transparent;
+    color: var(--crema);
+    font-size: 14px;
+    cursor: pointer;
+}
+.horario:hover   { border-color: var(--gris); }
+.horario.elegido { background: var(--dorado); border-color: var(--dorado); color: #111014; font-weight: 600; }
+
+.vacio {
+    padding: 40px;
+    text-align: center;
+    color: var(--gris);
+    border: 1px dashed var(--borde);
     border-radius: 12px;
 }
 
 
-/* FORMULARIO */
-.formulario {
-    padding: 33.8px;
+/* ---------------- Paso 3: contador ---------------- */
+.detalle-funcion {
+    color: var(--gris);
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
 }
 
-.formulario h3 {
-    font-size: 14px;
-    margin-bottom: 10px;
+.contador {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 48px;
+    margin: 36px 0 8px;
 }
 
-.formulario label {
-    display: block;              /* Cada etiqueta ocupa una línea */
-    font-size: 11px;
-    margin-bottom: 5px;
-    color: #d4ced7;
+.contador-numero {
+    font-family: var(--titulos);
+    font-size: 120px;
+    font-weight: 800;
+    line-height: 1;
+    min-width: 80px;
 }
 
-.formulario input {
-    width: 100%;
-    height: 31px;
-    background-color: #100e13;
-    border: 1px solid #403846;
-    border-radius: 7px;
-    padding: 8px;
-    color: #f5f0e8;
-    font-size: 11px;
-    margin-bottom: 10px;
-}
-
-.btn-crear {
-    width: 100%;
-    padding: 10px;
-    background-color: #f5f0e8;
-    color: #17141b;
-    border: none;
-    border-radius: 25px;
-    font-size: 11px;
-    font-weight: bold;
+.btn-circulo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 1px solid var(--borde);
+    background: transparent;
+    color: var(--crema);
+    font-size: 24px;
     cursor: pointer;
 }
+.btn-circulo:disabled { opacity: 0.3; cursor: not-allowed; }
 
 
-/* LISTADO DE SALAS */
-.lista-salas {
+/* ---------------- Paso 4: mapa de butacas ---------------- */
+.paso-butacas {
+    display: grid;
+    grid-template-columns: 1fr 330px;
+    gap: 48px;
+    align-items: start;
+}
+
+.zona-mapa { text-align: center; }
+
+.pantalla {
+    height: 24px;
+    margin: 0 8%;
+    border-top: 3px solid var(--dorado);
+    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+}
+
+.pantalla-texto {
+    color: var(--gris);
+    font-size: 12px;
+    letter-spacing: 6px;
+    margin-bottom: 32px;
+}
+
+.mapa {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 28px 40px;
+}
+
+.bloque-titulo {
+    color: var(--gris);
+    font-size: 12px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}
+
+/* Las columnas las define el JS con --columnas */
+.bloque {
+    display: grid;
+    grid-template-columns: repeat(var(--columnas), 34px);
     gap: 8px;
 }
 
-.sala {
-    display: flex;
-    justify-content: space-between; /* Información izquierda, acciones derecha */
-    align-items: center;
-    background-color: #1c1920;
-    border: 1px solid #302a35;
-    border-radius: 11px;
-    padding: 26.3px;
-}
-
-.sala-seleccionada {
-    border: 1px solid #e9b844;   /* Borde amarillo */
-}
-
-.sala h3 {
-    font-size: 19px;
-    margin-bottom: 3px;
-}
-
-.sala p {
-    font-size: 13px;
-    color: #aaa2b1;
-}
-
-.acciones {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-}
-
-.estado {
-    padding: 5px 9px;
-    border-radius: 15px;
-    font-size: 13px;
-}
-
-.activa {
-    background-color: #183e32;
-    color: #58d5a4;
-    
-}
-
-.inhabilitada {
-    background-color: #352e3a;
-    color: #aaa2b1;
-}
-
-.btn-estado {
-    background-color: transparent;
-    border: 1px solid #403846;
-    border-radius: 20px;
-    padding: 7px 12px;
-    color: #ddd6e2;
-    font-size: 13px;
+.butaca {
+    width: 34px;
+    height: 30px;
+    border-radius: 6px;
+    border: none;
+    font-size: 12px;
+    font-weight: 700;
+    color: #111014;
     cursor: pointer;
 }
 
+/* Estados: los mismos números que la matriz del backend */
+.butaca.estado-0 { background: var(--verde); }                       /* disponible   */
+.butaca.estado-0:hover { filter: brightness(1.15); }
+.butaca.estado-1 { background: var(--rojo); color: #F3C9CC; cursor: not-allowed; } /* ocupada */
+.butaca.estado-2 { background: transparent; border: 1px dashed #4A4555; cursor: not-allowed; } /* dañada */
+.butaca.estado-3 { background: var(--dorado); }                      /* seleccionada */
 
-/* MAPA DE BUTACAS */
-.mapa {
-    margin-top: 17px;
-    padding: 15px;
-    min-height: 500px;
-}
+.mapa.ocupado .butaca { pointer-events: none; }   /* mientras el backend responde */
 
-.mapa-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.mapa-header h3 {
-    font-size: 15px;
-    font-family: Archivo, sans-serif; 
-}
-
-.mapa-header p {
-    font-size: 13px;
-    color: #aaa2b1;
-}
-
-
-/* AGRUPACIONES DE BUTACAS */
-.agrupaciones {
-    display: flex;
-    justify-content: center;
-    gap: 35px;                    /* Pasillo entre agrupaciones */
-    padding: 0 10px;
-}
-
-.grupo-butacas {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.fila {
-    display: grid;
-    grid-template-columns: repeat(6, 50px); /* Seis butacas por fila */
-    gap: 10px;
-}
-
-.fila span {
-    width: 50px;
-    height: 45px;
-    background-color: #514959;
-    border-radius: 6px;
-}
-
-/* BUTACAS FUERA DE SERVICIO */
-.fila span.fuera {
-    background-color: transparent;
-    border: 1px dashed #e9b844;
-}
-
-
-/* LEYENDA */
 .leyenda {
     display: flex;
     justify-content: center;
-    gap: 25px;
-    margin-top: 25px;
+    flex-wrap: wrap;
+    gap: 22px;
+    margin-top: 36px;
+    font-size: 13px;
+    color: var(--gris);
+}
+.leyenda span { display: flex; align-items: center; gap: 8px; }
+
+.muestra { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.muestra.disponible   { background: var(--verde); }
+.muestra.seleccionada { background: var(--dorado); }
+.muestra.ocupada      { background: var(--rojo); }
+.muestra.danada       { border: 1px dashed #4A4555; }
+
+
+/* ---------------- Tarjetas ---------------- */
+.tarjeta {
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
 }
 
-.leyenda div {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
+.resumen { padding: 24px; position: sticky; top: 24px; }
+.resumen h3 { font-size: 20px; margin-bottom: 4px; }
+.resumen hr { border: none; border-top: 1px solid var(--borde); margin: 18px 0; }
 
-.leyenda p {
-    color: #aaa2b1;
+.conteo { color: var(--gris); margin-top: 6px; }
+.conteo strong { font-size: 28px; color: var(--crema); }
+
+.lista-butacas { font-weight: 600; margin-top: 4px; min-height: 20px; }
+
+.aviso {
+    margin: 18px 0;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: #2A2416;
+    color: var(--dorado);
     font-size: 13px;
 }
+.aviso.listo { background: var(--exito-fondo); color: var(--exito-texto); }
 
-.ejemplo {
-    width: 10px;
-    height: 10px;
-    border-radius: 3px;
-}
-
-.habilitada {
-    background-color: #514959;
-}
-
-.fuera-leyenda {
-    border: 1px dashed #e9b844;
+.fila-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
 }
 
 
-/* ADAPTACIÓN A PANTALLAS PEQUEÑAS */
-@media (max-width: 750px) {
+/* ---------------- Paso 5: tiquete y éxito ---------------- */
+#bloqueConfirmar { max-width: 560px; margin: 0 auto; }
+#bloqueConfirmar .titulo { margin-bottom: 28px; }
 
-    .sidebar {
-        width: 130px;
-    }
+.tiquete-datos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+    padding: 28px;
+}
+.tiquete-datos p:last-child { margin-top: 4px; font-size: 16px; }
 
-    .contenido {
-        margin-left: 130px;
-        padding: 15px;
-    }
+.tiquete-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 28px;
+    border-top: 1px dashed var(--borde);
+}
+.tiquete-total strong {
+    font-family: var(--titulos);
+    font-size: 44px;
+    font-weight: 800;
+}
 
-    .seccion-superior {
-        grid-template-columns: 1fr; /* Coloca las tarjetas una debajo de otra */
-    }
+.exito {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 36px;
+    background: var(--exito-fondo);
+    border-color: var(--exito-borde);
+}
+.exito-etiqueta { color: var(--exito-texto); letter-spacing: 3px; font-size: 13px; }
+.exito h2 { font-family: var(--texto); font-size: 30px; margin: 14px 0; color: var(--crema); }
+.exito > p:not(.exito-etiqueta):not(.nota) { line-height: 1.6; margin-bottom: 24px; }
+.btn-exito { border-color: var(--exito-borde); color: var(--crema); }
+.btn-exito:hover { border-color: var(--exito-texto); }
 
-    .sala {
-        gap: 8px;
-    }
 
-    .mapa {
-        overflow-x: auto;        /* Permite desplazar el mapa */
-    }
+/* ---------------- Mensaje de error flotante ---------------- */
+.toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 90%;
+    padding: 14px 22px;
+    border-radius: 10px;
+    background: #3A1A1E;
+    border: 1px solid var(--rojo);
+    color: #F7D4D6;
+    font-size: 14px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
 
+
+/* ---------------- Pantallas pequeñas ---------------- */
+@media (max-width: 860px) {
+    .paso-butacas { grid-template-columns: 1fr; }
+    .resumen { position: static; }
+    .titulo { font-size: 40px; }
+    .pasos li { font-size: 11px; }
+    .tiquete-datos { grid-template-columns: 1fr; }
 }

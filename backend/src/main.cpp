@@ -18,6 +18,7 @@
 #include "httplib.h"
 #include "json.hpp"
 #include "Database.h"
+#include "ReservaTemporal.h"
 
 using json = nlohmann::json;
 
@@ -37,8 +38,9 @@ void responderError(httplib::Response& res, int estado, const std::string& mensa
 // -----------------------------------------------------------------------------
 //  Validaciones (el servidor NUNCA confia en lo que manda el navegador)
 // -----------------------------------------------------------------------------
-const int MAX_AGRUPACIONES = 26;   // A..Z, para poder nombrar las filas con letras
-const int MAX_BUTACAS      = 30;
+const int MAX_AGRUPACIONES = 10;   // A..J: cada agrupacion (bloque) se nombra con una letra
+const int MAX_BUTACAS      = 60;   // butacas por agrupacion
+const int MAX_POR_RESERVA  = 10;   // butacas que un cliente puede reservar de una vez
 
 // Lee el JSON del cuerpo. Si no es valido o no es un objeto, devuelve false.
 bool leerCuerpo(const httplib::Request& req, json& j) {
@@ -159,6 +161,54 @@ std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>
     return "";
 }
 
+// ---- Reservacion -----------------------------------------------------------
+// Quita espacios al inicio y al final.
+std::string recortar(std::string t) {
+    t.erase(0, t.find_first_not_of(" \t"));
+    t.erase(t.find_last_not_of(" \t") + 1);
+    return t;
+}
+
+// Paso 1: nombre y telefono del cliente. El telefono se guarda solo con
+// digitos (se aceptan "8888 8888" o "8888-8888" y se guardan como "88888888").
+std::string validarCliente(const json& j, std::string& nombre, std::string& telefono) {
+    if (!j.contains("nombre") || !j["nombre"].is_string())
+        return "Falta el nombre";
+    if (!j.contains("telefono") || !j["telefono"].is_string())
+        return "Falta el numero de telefono";
+
+    nombre = recortar(j["nombre"].get<std::string>());
+    if (nombre.size() < 3)  return "Escriba el nombre completo";
+    if (nombre.size() > 60) return "El nombre es demasiado largo";
+
+    telefono.clear();
+    for (char c : j["telefono"].get<std::string>()) {
+        if (c == ' ' || c == '-') continue;
+        if (c < '0' || c > '9') return "El telefono solo puede tener numeros";
+        telefono += c;
+    }
+    if (telefono.size() != 8) return "Ingrese un numero de 8 digitos";
+    return "";
+}
+
+// Una funcion solo se puede reservar si existe, su pelicula esta en
+// exhibicion HOY y su sala esta habilitada. Devuelve "" si se puede.
+std::string validarFuncionReservable(const std::optional<InfoFuncion>& f) {
+    if (!f)                     return "La funcion no existe";
+    if (f->sala_habilitada == 0) return "La sala de esta funcion esta inhabilitada";
+    if (f->en_cartelera == 0)    return "Esta pelicula no esta en exhibicion hoy";
+    return "";
+}
+
+// Cuenta las posiciones con estado DISPONIBLE (0) en la matriz.
+int contarDisponibles(const std::vector<std::vector<int>>& matriz) {
+    int total = 0;
+    for (const auto& fila : matriz)
+        for (int estado : fila)
+            if (estado == DISPONIBLE) total++;
+    return total;
+}
+
 int main(int argc, char* argv[]) {
     int puerto = (argc > 1) ? std::stoi(argv[1]) : 8080;
 
@@ -272,6 +322,203 @@ int main(int argc, char* argv[]) {
 
             int id = db.crearPelicula(p, horarios);
             responderJson(res, json{{"ok", true}, {"id", id}}, 201);
+        });
+
+        // =====================================================================
+        //  RESERVACION (Modulos 3 y 4)
+        // =====================================================================
+        // Aqui viven las matrices de las reservaciones que estan en proceso.
+        static ReservasEnMemoria reservas;
+
+        // Paso 1: registrar al cliente (POST /api/clientes)
+        svr.Post("/api/clientes", [&](const httplib::Request& req, httplib::Response& res) {
+            json j;
+            if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
+
+            std::string nombre, telefono;
+            std::string error = validarCliente(j, nombre, telefono);
+            if (!error.empty()) return responderError(res, 400, error);
+
+            int id = db.crearCliente(nombre, telefono);
+            responderJson(res, json{{"ok", true}, {"cliente_id", id}}, 201);
+        });
+
+        // Paso 3: cuantas butacas quedan libres hoy en una funcion
+        // (GET /api/funciones/{id}/disponibles)
+        svr.Get(R"(/api/funciones/(\d+)/disponibles)", [&](const httplib::Request& req, httplib::Response& res) {
+            auto f = db.obtenerFuncion(std::stoi(req.matches[1]));
+            std::string error = validarFuncionReservable(f);
+            if (!error.empty()) return responderError(res, f ? 400 : 404, error);
+
+            std::vector<std::vector<int>> matriz, ids;
+            db.cargarMatriz(*f, db.fechaHoy(), matriz, ids);
+            responderJson(res, json{{"disponibles", contarDisponibles(matriz)}});
+        });
+
+        // Pasos 3 y 4: iniciar la reservacion temporal (POST /api/reserva/iniciar)
+        // Consulta SQLite, carga la matriz en memoria y devuelve un token.
+        svr.Post("/api/reserva/iniciar", [&](const httplib::Request& req, httplib::Response& res) {
+            json j;
+            if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
+            if (!j.contains("cliente_id") || !j["cliente_id"].is_number_integer() ||
+                !j.contains("funcion_id") || !j["funcion_id"].is_number_integer() ||
+                !j.contains("cantidad")   || !j["cantidad"].is_number_integer())
+                return responderError(res, 400, "Faltan cliente_id, funcion_id o cantidad");
+
+            int cliente_id = j["cliente_id"].get<int>();
+            int funcion_id = j["funcion_id"].get<int>();
+            int cantidad   = j["cantidad"].get<int>();
+
+            if (!db.existeCliente(cliente_id))
+                return responderError(res, 404, "Cliente no encontrado. Vuelva al paso 1");
+
+            auto f = db.obtenerFuncion(funcion_id);
+            std::string error = validarFuncionReservable(f);
+            if (!error.empty()) return responderError(res, f ? 400 : 404, error);
+
+            if (cantidad < 1 || cantidad > MAX_POR_RESERVA)
+                return responderError(res, 400, "Puede reservar de 1 a " +
+                                      std::to_string(MAX_POR_RESERVA) + " butacas");
+
+            // Cargar la matriz con lo que YA esta guardado en SQLite.
+            ReservaTemporal r;
+            r.cliente_id = cliente_id;
+            r.funcion    = *f;
+            r.fecha      = db.fechaHoy();
+            r.cantidad   = cantidad;
+            db.cargarMatriz(*f, r.fecha, r.matriz, r.ids);
+
+            int disponibles = contarDisponibles(r.matriz);
+            if (cantidad > disponibles)
+                return responderError(res, 400, "Solo quedan " + std::to_string(disponibles) +
+                                      " butacas disponibles en esta funcion");
+
+            json respuesta = {
+                {"ok", true},
+                {"cantidad", cantidad},
+                {"matriz", r.matriz},
+                {"agrupaciones", f->agrupaciones},
+                {"butacas_por_agrupacion", f->butacas_por_agrupacion}
+            };
+            respuesta["token"] = reservas.crear(std::move(r));
+            responderJson(res, respuesta, 201);
+        });
+
+        // Paso 4: marcar o desmarcar una butaca (POST /api/reserva/{token}/marcar)
+        // Solo cambia la matriz en memoria: 0 -> 3 o 3 -> 0. No toca SQLite.
+        svr.Post(R"(/api/reserva/(\w+)/marcar)", [&](const httplib::Request& req, httplib::Response& res) {
+            std::string token = req.matches[1];
+            json j;
+            if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
+            if (!j.contains("agrupacion") || !j["agrupacion"].is_number_integer() ||
+                !j.contains("numero")     || !j["numero"].is_number_integer())
+                return responderError(res, 400, "Faltan agrupacion y numero");
+
+            int a = j["agrupacion"].get<int>();
+            int n = j["numero"].get<int>();
+
+            int codigo = 200;
+            std::string error;
+            json respuesta;
+
+            bool existe = reservas.usar(token, [&](ReservaTemporal& r) {
+                // La posicion tiene que estar dentro de la matriz.
+                if (a < 0 || a >= (int)r.matriz.size() || n < 0 || n >= (int)r.matriz[a].size()) {
+                    codigo = 400; error = "Esa butaca no existe en la sala"; return;
+                }
+                int& estado = r.matriz[a][n];
+
+                if (estado == OCUPADA || estado == DANADA) {
+                    codigo = 409; error = "La butaca " + etiquetaButaca(a, n) + " no esta disponible"; return;
+                }
+                if (estado == DISPONIBLE) {
+                    if (r.seleccionadas >= r.cantidad) {
+                        codigo = 400;
+                        error = "Ya eligio las " + std::to_string(r.cantidad) +
+                                " butacas. Desmarque una para cambiarla";
+                        return;
+                    }
+                    estado = SELECCIONADA;          // nueva seleccion del cliente
+                    r.seleccionadas++;
+                } else {                            // estaba en 3: se desmarca
+                    estado = DISPONIBLE;
+                    r.seleccionadas--;
+                }
+                respuesta = {
+                    {"ok", true},
+                    {"estado", estado},
+                    {"seleccionadas", r.seleccionadas},
+                    {"butacas", r.etiquetasNuevas()}
+                };
+            });
+
+            if (!existe) return responderError(res, 404, "La reservacion expiro. Empiece de nuevo");
+            if (!error.empty()) return responderError(res, codigo, error);
+            responderJson(res, respuesta);
+        });
+
+        // Paso 5: confirmar y simular el pago (POST /api/reserva/{token}/confirmar)
+        svr.Post(R"(/api/reserva/(\w+)/confirmar)", [&](const httplib::Request& req, httplib::Response& res) {
+            std::string token = req.matches[1];
+            auto r = reservas.copia(token);
+            if (!r) return responderError(res, 404, "La reservacion expiro. Empiece de nuevo");
+
+            // 1. Tienen que estar elegidas exactamente las butacas pedidas.
+            if (r->seleccionadas != r->cantidad)
+                return responderError(res, 400, "Debe elegir " + std::to_string(r->cantidad) + " butacas");
+
+            // 2. Recorrer la matriz y tomar SOLO las posiciones con estado 3.
+            //    Las de estado 1 ya estaban en SQLite y no se vuelven a insertar.
+            std::vector<int> ids_nuevos;
+            for (const auto& [a, n] : r->posicionesNuevas()) ids_nuevos.push_back(r->ids[a][n]);
+
+            // 3. Guardar en SQLite (revisa de nuevo la disponibilidad adentro).
+            std::vector<int> conflictos = db.confirmarReserva(
+                r->funcion.funcion_id, r->cliente_id, r->fecha, ids_nuevos);
+
+            if (!conflictos.empty()) {
+                // Otro cliente gano alguna butaca: se recarga la matriz desde
+                // SQLite y se conservan las selecciones que siguen libres.
+                json respuesta;
+                reservas.usar(token, [&](ReservaTemporal& t) {
+                    std::vector<std::vector<int>> nueva, ids;
+                    db.cargarMatriz(t.funcion, t.fecha, nueva, ids);
+                    t.seleccionadas = 0;
+                    for (size_t a = 0; a < nueva.size(); a++)
+                        for (size_t n = 0; n < nueva[a].size(); n++)
+                            if (t.matriz[a][n] == SELECCIONADA && nueva[a][n] == DISPONIBLE) {
+                                nueva[a][n] = SELECCIONADA;
+                                t.seleccionadas++;
+                            }
+                    t.matriz = nueva;
+                    t.ids    = ids;
+                    respuesta = {
+                        {"error", "Otra persona acaba de reservar alguna de sus butacas. Elija otra."},
+                        {"matriz", t.matriz},
+                        {"seleccionadas", t.seleccionadas},
+                        {"butacas", t.etiquetasNuevas()}
+                    };
+                });
+                return responderJson(res, respuesta, 409);
+            }
+
+            // 4. Listo: se borra la matriz temporal de memoria.
+            reservas.borrar(token);
+            responderJson(res, json{
+                {"ok", true},
+                {"total", r->funcion.precio * r->cantidad},
+                {"butacas", r->etiquetasNuevas()},
+                {"pelicula", r->funcion.pelicula},
+                {"sala", r->funcion.sala},
+                {"hora", r->funcion.hora}
+            }, 201);
+        });
+
+        // Cancelar o cambiar la cantidad (POST /api/reserva/{token}/cancelar)
+        // Borra la matriz temporal sin guardar nada.
+        svr.Post(R"(/api/reserva/(\w+)/cancelar)", [&](const httplib::Request& req, httplib::Response& res) {
+            reservas.borrar(req.matches[1]);
+            responderJson(res, json{{"ok", true}});
         });
 
         // Si una ruta lanza una excepcion (por ejemplo un error de SQLite),

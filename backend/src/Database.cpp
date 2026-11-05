@@ -314,3 +314,150 @@ int Database::crearPelicula(const Pelicula& p, const std::vector<std::string>& h
         throw;
     }
 }
+
+// =============================================================================
+//  Clientes
+// =============================================================================
+int Database::crearCliente(const std::string& nombre, const std::string& telefono) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "INSERT INTO clientes (nombre, telefono) VALUES (?, ?)");
+    s.bind(1, nombre);
+    s.bind(2, telefono);
+    s.siguiente();
+    return static_cast<int>(sqlite3_last_insert_rowid(db_));
+}
+
+bool Database::existeCliente(int id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "SELECT COUNT(*) FROM clientes WHERE id = ?");
+    s.bind(1, id);
+    s.siguiente();
+    return s.entero(0) > 0;
+}
+
+// =============================================================================
+//  Reservaciones
+// =============================================================================
+std::string Database::fechaHoy() {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "SELECT date('now', 'localtime')");
+    s.siguiente();
+    return s.texto(0);
+}
+
+std::optional<InfoFuncion> Database::obtenerFuncion(int funcion_id) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // JOIN de tres tablas: la funcion, su pelicula y la sala de la pelicula.
+    Sentencia s(db_,
+        "SELECT f.id, f.hora, p.id, p.nombre, p.precio, "
+        "       s.id, s.nombre, s.agrupaciones, s.butacas_por_agrupacion, s.habilitada, "
+        "       (date('now', 'localtime') BETWEEN p.fecha_inicio AND p.fecha_fin) "
+        "FROM funciones f "
+        "JOIN peliculas p ON p.id = f.pelicula_id "
+        "JOIN salas s     ON s.id = p.sala_id "
+        "WHERE f.id = ?");
+    s.bind(1, funcion_id);
+    if (!s.siguiente()) return std::nullopt;
+
+    InfoFuncion f;
+    f.funcion_id             = s.entero(0);
+    f.hora                   = s.texto(1);
+    f.pelicula_id            = s.entero(2);
+    f.pelicula               = s.texto(3);
+    f.precio                 = s.real(4);
+    f.sala_id                = s.entero(5);
+    f.sala                   = s.texto(6);
+    f.agrupaciones           = s.entero(7);
+    f.butacas_por_agrupacion = s.entero(8);
+    f.sala_habilitada        = s.entero(9);
+    f.en_cartelera           = s.entero(10);
+    return f;
+}
+
+void Database::cargarMatriz(const InfoFuncion& f, const std::string& fecha,
+                            std::vector<std::vector<int>>& matriz,
+                            std::vector<std::vector<int>>& ids) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // 1. Crear la matriz del tamano de la sala, todo en 0 (disponible).
+    matriz.assign(f.agrupaciones, std::vector<int>(f.butacas_por_agrupacion, 0));
+    ids.assign(f.agrupaciones, std::vector<int>(f.butacas_por_agrupacion, 0));
+
+    // 2. LEFT JOIN: trae TODAS las butacas de la sala y, si la butaca ya
+    //    tiene reserva para esta funcion y este dia, r.id no es NULL.
+    Sentencia s(db_,
+        "SELECT b.id, b.agrupacion, b.numero, b.habilitada, "
+        "       (r.id IS NOT NULL) AS ocupada "
+        "FROM butacas b "
+        "LEFT JOIN reservaciones r "
+        "       ON r.butaca_id = b.id AND r.funcion_id = ? AND r.fecha = ? "
+        "WHERE b.sala_id = ?");
+    s.bind(1, f.funcion_id);
+    s.bind(2, fecha);
+    s.bind(3, f.sala_id);
+
+    // 3. Pasar el estado de cada butaca a su posicion en la matriz.
+    while (s.siguiente()) {
+        int id = s.entero(0), a = s.entero(1), n = s.entero(2);
+        if (a < 0 || a >= f.agrupaciones || n < 0 || n >= f.butacas_por_agrupacion) continue;
+
+        ids[a][n] = id;
+        if (s.entero(3) == 0)      matriz[a][n] = 2;   // danada / fuera de servicio
+        else if (s.entero(4) == 1) matriz[a][n] = 1;   // ocupada por otro cliente
+    }
+}
+
+std::vector<int> Database::confirmarReserva(int funcion_id, int cliente_id,
+                                            const std::string& fecha,
+                                            const std::vector<int>& butaca_ids) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    std::vector<int> conflictos;
+
+    // Transaccion: o se guardan TODAS las butacas del cliente o NINGUNA.
+    ejecutar("BEGIN IMMEDIATE TRANSACTION;");
+    try {
+        // 1. Revisar otra vez en SQLite (otro cliente pudo reservar mientras
+        //    este elegia, o el administrador pudo inhabilitar la butaca).
+        Sentencia revisar(db_,
+            "SELECT b.habilitada, "
+            "       (SELECT COUNT(*) FROM reservaciones r "
+            "        WHERE r.butaca_id = b.id AND r.funcion_id = ? AND r.fecha = ?) "
+            "FROM butacas b WHERE b.id = ?");
+        for (int id : butaca_ids) {
+            revisar.reiniciar();
+            revisar.bind(1, funcion_id);
+            revisar.bind(2, fecha);
+            revisar.bind(3, id);
+            if (!revisar.siguiente() || revisar.entero(0) == 0 || revisar.entero(1) > 0)
+                conflictos.push_back(id);
+        }
+
+        if (!conflictos.empty()) {
+            ejecutar("ROLLBACK;");
+            return conflictos;
+        }
+
+        // 2. Insertar una fila por butaca nueva.
+        Sentencia ins(db_,
+            "INSERT INTO reservaciones (funcion_id, butaca_id, cliente_id, fecha) "
+            "VALUES (?, ?, ?, ?)");
+        for (int id : butaca_ids) {
+            ins.reiniciar();
+            ins.bind(1, funcion_id);
+            ins.bind(2, id);
+            ins.bind(3, cliente_id);
+            ins.bind(4, fecha);
+            ins.siguiente();
+        }
+
+        ejecutar("COMMIT;");
+        return conflictos;   // vacio = todo bien
+    } catch (...) {
+        ejecutar("ROLLBACK;");
+        throw;
+    }
+}

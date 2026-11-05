@@ -64,6 +64,37 @@ public:
     //    Devuelve el id de la pelicula nueva.
     int crearPelicula(const Pelicula& p, const std::vector<std::string>& horarios);
 
+    // ---------------- Clientes ----------------
+    // C: registra al cliente del paso 1 y devuelve su id.
+    int crearCliente(const std::string& nombre, const std::string& telefono);
+
+    // R: true si existe un cliente con ese id.
+    bool existeCliente(int id);
+
+    // ---------------- Reservaciones ----------------
+    // Fecha de hoy segun SQLite ('AAAA-MM-DD', hora local). Las reservas se
+    // guardan con esta fecha porque la misma funcion se repite cada dia.
+    std::string fechaHoy();
+
+    // R: pelicula, sala y configuracion de una funcion. nullopt si no existe.
+    std::optional<InfoFuncion> obtenerFuncion(int funcion_id);
+
+    // R: arma la matriz de la sala para una funcion y un dia:
+    //    matriz[agrupacion][numero] = 0 disponible, 1 ocupada, 2 danada.
+    //    En ids deja el id de la butaca de cada posicion (para insertar luego).
+    void cargarMatriz(const InfoFuncion& f, const std::string& fecha,
+                      std::vector<std::vector<int>>& matriz,
+                      std::vector<std::vector<int>>& ids);
+
+    // C: guarda las butacas nuevas en UNA transaccion.
+    //    Antes de insertar vuelve a revisar en SQLite que cada butaca siga
+    //    habilitada y libre. Si alguna ya no lo esta, no guarda NADA
+    //    (ROLLBACK) y devuelve los ids de las butacas en conflicto.
+    //    Si todo sale bien devuelve un vector vacio.
+    std::vector<int> confirmarReserva(int funcion_id, int cliente_id,
+                                      const std::string& fecha,
+                                      const std::vector<int>& butaca_ids);
+
 private:
     sqlite3*   db_ = nullptr;   // "Conexion" a la base de datos
     std::mutex mutex_;          // Evita que dos peticiones (hilos) usen la

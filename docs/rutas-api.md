@@ -109,15 +109,29 @@ precio mayor que 0, sala existente y habilitada, al menos un horario.
 
 ## 3. Reservación (cliente)
 
+La página es `frontend/reserva.html` (un solo HTML con los 5 pasos) y su
+lógica está en `frontend/js/reserva.js`. La matriz temporal vive en
+`backend/src/ReservaTemporal.h`.
+
 ### Paso 1 — `POST /api/clientes`
 ```json
-{ "nombre": "Maria Lopez", "telefono": "88887777" }
+{ "nombre": "Maria Lopez", "telefono": "8888 7777" }
 ```
 Respuesta: `{ "ok": true, "cliente_id": 5 }`
+
+Validaciones del backend: nombre de 3 a 60 caracteres; teléfono de 8 dígitos
+(acepta espacios o guiones y lo guarda solo con números).
 
 ### Paso 2 — `GET /api/cartelera`
 Solo películas con la fecha de hoy dentro del período y sala habilitada.
 Misma forma que `GET /api/peliculas`.
+
+### Paso 3 — `GET /api/funciones/{id}/disponibles`
+Cuántas butacas libres quedan HOY en esa función (para el texto
+"Quedan N butacas disponibles" y el máximo del contador).
+```json
+{ "disponibles": 66 }
+```
 
 ### Pasos 3 y 4 — `POST /api/reserva/iniciar`
 El cliente ya eligió la función y la cantidad. El backend consulta SQLite, carga
@@ -126,12 +140,17 @@ que identifica esta reservación temporal.
 ```json
 { "cliente_id": 5, "funcion_id": 1, "cantidad": 3 }
 ```
-Respuesta:
+Validaciones del backend: el cliente existe, la película está en exhibición
+hoy, la sala está habilitada, cantidad de 1 a 10 y no mayor que las disponibles.
+
+Respuesta (201):
 ```json
 {
   "ok": true,
   "token": "r17",
   "cantidad": 3,
+  "agrupaciones": 2,
+  "butacas_por_agrupacion": 8,
   "matriz": [
     [2, 0, 0, 1, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0]
@@ -145,14 +164,18 @@ Respuesta:
 |---|---|---|
 | 0 | Disponible | Verde |
 | 1 | Ocupada (reserva anterior en SQLite) | Rojo |
-| 2 | Inhabilitada / dañada | Rojo |
+| 2 | Inhabilitada / dañada | Sin color (borde punteado) |
 | 3 | Seleccionada por el cliente actual (nueva) | Amarillo |
 
-Para el cliente, 1 y 2 se ven iguales (rojo, no se puede tocar). Se mantienen
-como números distintos para que el backend sepa por qué está bloqueada y no
-intente guardar una butaca dañada como si fuera una reserva.
+Ninguna de las dos (1 y 2) se puede tocar. Se mantienen como números distintos
+para que el backend sepa por qué está bloqueada y no intente guardar una butaca
+dañada como si fuera una reserva; en pantalla la dañada sale como "Fuera de
+servicio", igual que en el boceto.
 
 La fila es la agrupación y la columna es el número: `matriz[agrupacion][numero]`.
+Nombre de la butaca: letra de la agrupación + número desde 1 → `(0, 4)` = `A5`.
+En pantalla cada agrupación se dibuja como un bloque (el número de columnas del
+bloque es solo diseño, lo decide el JS).
 
 ### Paso 4 — `POST /api/reserva/{token}/marcar`
 Cada clic en una butaca. El backend cambia 0 → 3 o 3 → 0 en la matriz en memoria.
@@ -160,7 +183,10 @@ Si es 1 o 2, lo rechaza. Tampoco deja pasar de la cantidad pedida.
 ```json
 { "agrupacion": 0, "numero": 4 }
 ```
-Respuesta: `{ "ok": true, "estado": 3, "seleccionadas": 1 }`
+Respuesta: `{ "ok": true, "estado": 3, "seleccionadas": 1, "butacas": ["A5"] }`
+
+Errores: 409 si la butaca es 1 o 2; 400 si ya eligió todas; 404 si el token expiró
+(la matriz temporal se borra sola a los 20 minutos).
 
 ### Paso 5 — `POST /api/reserva/{token}/confirmar`
 Simula el pago. El backend:
@@ -173,4 +199,20 @@ Respuesta:
 ```json
 { "ok": true, "total": 10500, "butacas": ["A5", "A6", "A7"] }
 ```
-Si otra persona ganó una butaca: código 409 con el `error` correspondiente.
+Respuesta completa (201):
+```json
+{ "ok": true, "total": 10500, "butacas": ["A5", "B8", "B18"],
+  "pelicula": "Dune", "sala": "Sala 2", "hora": "19:30" }
+```
+
+Si otra persona ganó una butaca: código 409. El backend recarga la matriz desde
+SQLite, conserva las selecciones que siguen libres y responde:
+```json
+{ "error": "Otra persona acaba de reservar...", "matriz": [[...]],
+  "seleccionadas": 1, "butacas": ["A3"] }
+```
+El navegador vuelve al paso 4 con el mapa actualizado.
+
+### `POST /api/reserva/{token}/cancelar`
+Borra la matriz temporal sin guardar nada. Se usa en "Cancelar y volver",
+"Cambiar cantidad" y al cerrar la pestaña. Respuesta: `{ "ok": true }`

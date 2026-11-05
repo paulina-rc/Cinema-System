@@ -77,6 +77,23 @@ struct Pelicula {
     std::vector<Funcion> horarios;
 };
 
+// ------------------------------------------------- Datos de una funcion (JOIN)
+// Todo lo que se necesita saber de una funcion para reservar:
+// funciones + peliculas + salas en una sola consulta.
+struct InfoFuncion {
+    int         funcion_id = 0;
+    std::string hora;                  // "HH:MM"
+    int         pelicula_id = 0;
+    std::string pelicula;
+    double      precio = 0.0;
+    int         sala_id = 0;
+    std::string sala;
+    int         agrupaciones = 0;
+    int         butacas_por_agrupacion = 0;
+    int         sala_habilitada = 1;
+    int         en_cartelera = 0;      // 1 si HOY esta dentro del periodo de exhibicion
+};
+
 inline void to_json(json& j, const Pelicula& p) {
     j = json{
         {"id",           p.id},
