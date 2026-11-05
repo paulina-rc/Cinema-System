@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="css/reserva.css">
+</head>
+<body>
+    
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Salas y butacas | IMPERIUM Cinemas</title>
+
+    <link rel="stylesheet" href="css/salas.css">
+</head>
+
+<body>
+
+    <!-- MENÚ LATERAL -->
+    <aside class="sidebar">
+
+        <div class="logo">
+            <h2>IMPERIUM Cinemas</h2>
+            <p>ADMINISTRACIÓN</p>
+        </div>
+
+        <nav class="menu">
+            <a href="peliculas.html">Películas</a>
+            <a href="salas.html" class="seleccionado">Salas y butacas</a>
+            <a href="index.html">Ver cartelera</a>
+        </nav>
+
+    </aside>
+
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main class="contenido">
+
+        <h1>SALAS Y BUTACAS</h1>
+
+        <!-- FORMULARIO Y LISTADO DE SALAS -->
+        <section class="seccion-superior">
+
+            <!-- FORMULARIO -->
+            <div class="card formulario">
+
+                <h3>Nueva sala</h3>
+
+                <label for="nombreSala">Nombre de la sala</label>
+                <input type="text" id="nombreSala" placeholder="Sala 4">
+
+                <label for="agrupaciones">Cantidad de agrupaciones</label>
+                <input type="number" id="agrupaciones" placeholder="2">
+
+                <label for="butacas">Butacas por agrupación</label>
+                <input type="number" id="butacas" placeholder="42">
+
+                <button class="btn-crear">
+                    Crear sala y generar butacas
+                </button>
+
+            </div>
+
+
+            <!-- LISTADO DE SALAS -->
+            <div class="lista-salas">
+
+                <div class="sala">
+                    <div>
+                        <h3>Sala 1</h3>
+                        <p>2 agrupaciones × 40 butacas</p>
+                    </div>
+
+                    <div class="acciones">
+                        <span class="estado activa">Activa</span>
+                        <button class="btn-estado">Inhabilitar</button>
+                    </div>
+                </div>
+
+
+                <div class="sala sala-seleccionada">
+                    <div>
+                        <h3>Sala 2</h3>
+                        <p>2 agrupaciones × 42 butacas</p>
+                    </div>
+
+                    <div class="acciones">
+                        <span class="estado activa">Activa</span>
+                        <button class="btn-estado">Inhabilitar</button>
+                    </div>
+                </div>
+
+
+                <div class="sala">
+                    <div>
+                        <h3>Sala 3</h3>
+                        <p>3 agrupaciones × 30 butacas</p>
+                    </div>
+
+                    <div class="acciones">
+                        <span class="estado inhabilitada">Inhabilitada</span>
+                        <button class="btn-estado">Habilitar</button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- MAPA DE BUTACAS -->
+        <section class="card mapa">
+
+            <div class="mapa-header">
+                <h3>Mapa de Sala 2</h3>
+                <p>Toca una butaca para marcarla fuera de servicio</p>
+            </div>
+
+
+            <div class="agrupaciones">
+
+                <!-- PRIMERA AGRUPACIÓN -->
+                <div class="grupo-butacas">
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span class="fuera"></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                </div>
+
+
+                <!-- SEGUNDA AGRUPACIÓN -->
+                <div class="grupo-butacas">
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span></span>
+                    </div>
+
+                    <div class="fila">
+                        <span></span><span></span><span></span>
+                        <span></span><span></span><span class="fuera"></span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- LEYENDA -->
+            <div class="leyenda">
+
+                <div>
+                    <span class="ejemplo habilitada"></span>
+                    <p>Habilitada</p>
+                </div>
+
+                <div>
+                    <span class="ejemplo fuera-leyenda"></span>
+                    <p>Fuera de servicio</p>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>
+
+</body>
+</html>

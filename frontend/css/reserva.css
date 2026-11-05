@@ -1,0 +1,326 @@
+
+/* CONFIGURACIÓN GENERAL */
+* {
+    margin: 0;                   /* Elimina márgenes predeterminados */
+    padding: 0;                  /* Elimina espacios internos */
+    box-sizing: border-box;      /* Incluye padding y bordes en las medidas */
+}
+
+body {
+    background-color: #100e13;   /* Fondo oscuro */
+    color: #f5f0e8;              /* Color principal del texto */
+    font-family: Arial, sans-serif; /* Tipo de letra */
+    min-height: 100vh;           /* Altura mínima de pantalla */
+}
+
+
+/* MENÚ LATERAL */
+.sidebar {
+    width: 170px;                /* Ancho del menú */
+    height: 100vh;               /* Ocupa toda la altura */
+    background-color: #17141b;   /* Fondo del menú */
+    border-right: 1px solid #302a35; /* Línea divisoria */
+    position: fixed;             /* Mantiene el menú fijo */
+    top: 0;
+    left: 0;
+}
+
+.logo {
+    padding: 14px 13px;          /* Espacio interno */
+    border-bottom: 1px solid #302a35;
+    
+}
+
+.logo h2 {
+    color: #e9b844;              /* Amarillo del logo */
+    font-size: 14px;
+    font-family: Georgia, serif;
+    font-family: 'Big Shoulders Display', sans-serif;
+}
+
+.logo p {
+    color: #aaa2b1;
+    font-size: 13px;
+    letter-spacing: 2px;         /* Separación de letras */
+    margin-top: 6px;
+    font-family: Archivo, sans-serif; 
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;      /* Enlaces uno debajo del otro */
+    padding: 15px 12px;
+    gap: 9px;                    /* Espacio entre enlaces */
+}
+
+.menu a {
+    text-decoration: none;       /* Quita el subrayado */
+    color: #bdb7c2;
+    font-size: 14px;
+    padding: 11px 9px;
+    border-radius: 8px;
+}
+
+.menu a:hover,
+.menu a.seleccionado {
+    background-color: #29232e;   /* Fondo del enlace seleccionado */
+    color: #f5f0e8;
+}
+
+
+/* CONTENIDO PRINCIPAL */
+.contenido {
+    margin-left: 170px;          /* Deja espacio para el menú */
+    padding: 15px 33px;
+}
+
+.contenido > h1 {
+    font-size: 27px;
+    font-family: Georgia, serif;
+    margin-bottom: 14px;
+    font-family: Archivo, sans-serif; 
+}
+
+
+/* DISTRIBUCIÓN SUPERIOR */
+.seccion-superior {
+    display: grid;
+    grid-template-columns: 240px 1fr; /* Formulario y listado */
+    gap: 15px;
+    align-items: start;
+}
+
+
+/* TARJETAS GENERALES */
+.card {
+    background-color: #1c1920;
+    border: 1px solid #302a35;
+    border-radius: 12px;
+}
+
+
+/* FORMULARIO */
+.formulario {
+    padding: 33.8px;
+}
+
+.formulario h3 {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.formulario label {
+    display: block;              /* Cada etiqueta ocupa una línea */
+    font-size: 11px;
+    margin-bottom: 5px;
+    color: #d4ced7;
+}
+
+.formulario input {
+    width: 100%;
+    height: 31px;
+    background-color: #100e13;
+    border: 1px solid #403846;
+    border-radius: 7px;
+    padding: 8px;
+    color: #f5f0e8;
+    font-size: 11px;
+    margin-bottom: 10px;
+}
+
+.btn-crear {
+    width: 100%;
+    padding: 10px;
+    background-color: #f5f0e8;
+    color: #17141b;
+    border: none;
+    border-radius: 25px;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+
+/* LISTADO DE SALAS */
+.lista-salas {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sala {
+    display: flex;
+    justify-content: space-between; /* Información izquierda, acciones derecha */
+    align-items: center;
+    background-color: #1c1920;
+    border: 1px solid #302a35;
+    border-radius: 11px;
+    padding: 26.3px;
+}
+
+.sala-seleccionada {
+    border: 1px solid #e9b844;   /* Borde amarillo */
+}
+
+.sala h3 {
+    font-size: 19px;
+    margin-bottom: 3px;
+}
+
+.sala p {
+    font-size: 13px;
+    color: #aaa2b1;
+}
+
+.acciones {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.estado {
+    padding: 5px 9px;
+    border-radius: 15px;
+    font-size: 13px;
+}
+
+.activa {
+    background-color: #183e32;
+    color: #58d5a4;
+    
+}
+
+.inhabilitada {
+    background-color: #352e3a;
+    color: #aaa2b1;
+}
+
+.btn-estado {
+    background-color: transparent;
+    border: 1px solid #403846;
+    border-radius: 20px;
+    padding: 7px 12px;
+    color: #ddd6e2;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+
+/* MAPA DE BUTACAS */
+.mapa {
+    margin-top: 17px;
+    padding: 15px;
+    min-height: 500px;
+}
+
+.mapa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.mapa-header h3 {
+    font-size: 15px;
+    font-family: Archivo, sans-serif; 
+}
+
+.mapa-header p {
+    font-size: 13px;
+    color: #aaa2b1;
+}
+
+
+/* AGRUPACIONES DE BUTACAS */
+.agrupaciones {
+    display: flex;
+    justify-content: center;
+    gap: 35px;                    /* Pasillo entre agrupaciones */
+    padding: 0 10px;
+}
+
+.grupo-butacas {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.fila {
+    display: grid;
+    grid-template-columns: repeat(6, 50px); /* Seis butacas por fila */
+    gap: 10px;
+}
+
+.fila span {
+    width: 50px;
+    height: 45px;
+    background-color: #514959;
+    border-radius: 6px;
+}
+
+/* BUTACAS FUERA DE SERVICIO */
+.fila span.fuera {
+    background-color: transparent;
+    border: 1px dashed #e9b844;
+}
+
+
+/* LEYENDA */
+.leyenda {
+    display: flex;
+    justify-content: center;
+    gap: 25px;
+    margin-top: 25px;
+}
+
+.leyenda div {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.leyenda p {
+    color: #aaa2b1;
+    font-size: 13px;
+}
+
+.ejemplo {
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+}
+
+.habilitada {
+    background-color: #514959;
+}
+
+.fuera-leyenda {
+    border: 1px dashed #e9b844;
+}
+
+
+/* ADAPTACIÓN A PANTALLAS PEQUEÑAS */
+@media (max-width: 750px) {
+
+    .sidebar {
+        width: 130px;
+    }
+
+    .contenido {
+        margin-left: 130px;
+        padding: 15px;
+    }
+
+    .seccion-superior {
+        grid-template-columns: 1fr; /* Coloca las tarjetas una debajo de otra */
+    }
+
+    .sala {
+        gap: 8px;
+    }
+
+    .mapa {
+        overflow-x: auto;        /* Permite desplazar el mapa */
+    }
+
+}

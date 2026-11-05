@@ -60,14 +60,17 @@ h3 {
 }
 
 .btn-reservar {
-    background-color: #f5f0e8;        /* Fondo crema */
-    color: #111014;                   /* Texto oscuro */
-    border: none;                     /* Sin borde */
-    border-radius: 30px;              /* Bordes redondeados */
-    padding: 15px 30px;               /* Espacio interno */
-    font-size: 14px;                  /* Tamaño del texto */
-    font-weight: bold;                /* Texto en negrita */
-    cursor: pointer;                  /* Cursor de mano */
+    display: inline-block;       /* Permite aplicar dimensiones */
+    background-color: #f5f0e8;   /* Fondo crema */
+    color: #111014;              /* Texto oscuro */
+    text-decoration: none;       /* Quita el subrayado */
+    border: none;                /* Quita el borde */
+    border-radius: 30px;          /* Redondea las esquinas */
+    padding: 15px 30px;           /* Espacio interno */
+    font-size: 14px;              /* Tamaño del texto */
+    font-weight: bold;            /* Texto en negrita */
+    cursor: pointer;              /* Cursor de mano */
+    font-family: Archivo, sans-serif;        
 }
 
 
