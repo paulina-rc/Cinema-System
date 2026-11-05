@@ -139,10 +139,10 @@ h3 {
 
 /* CONTENEDOR PRINCIPAL */
 .carrusel {
-    height: 700px;       /* Reduce la altura del carrusel */
+    height:570px;       /* Reduce la altura del carrusel */
     max-width: 1160px;   /* Ancho máximo */
-    width: 90%;          /* Ocupa el 90% de la pantalla */
-    margin: 30px auto;   /* Centra el carrusel */
+    width: 100%;          /* Ocupa el 90% de la pantalla */
+    margin: 50px auto;   /* Centra el carrusel */
     overflow: hidden;    /* Oculta lo que sobresalga */
     position: relative;  /* Permite colocar las flechas encima */
     border-radius: 15px; /* Redondea las esquinas */
@@ -151,7 +151,7 @@ h3 {
 /* CONTENEDOR DE SLIDES */
 .carrusel-imagenes {
     display: flex;            /* Coloca las imágenes en fila */
-    height: 100%;             /* Ocupa toda la altura */
+    height: 300%;             /* Ocupa toda la altura */
     transition: transform 0.5s ease; /* Animación al cambiar */
 }
 
@@ -163,7 +163,7 @@ h3 {
 
 .slide img {
     width: 100%;         /* Ocupa todo el ancho */
-    height: 100%;        /* Se adapta a la altura */
+    height: 80%;        /* Se adapta a la altura */
     object-fit: cover;   /* Evita deformaciones */
     object-position: center; /* Centra la imagen */
     display: block;      /* Elimina espacios sobrantes */
