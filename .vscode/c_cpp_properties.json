@@ -1,0 +1,21 @@
+{
+    "configurations": [
+        {
+            "name": "MSYS2 UCRT64",
+            "compilerPath": "C:/msys64/ucrt64/bin/g++.exe",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "windows-gcc-x64",
+            "includePath": [
+                "${workspaceFolder}/backend/src",
+                "${workspaceFolder}/backend/third_party/httplib",
+                "${workspaceFolder}/backend/third_party/json",
+                "${workspaceFolder}/backend/third_party/sqlite"
+            ],
+            "defines": [
+                "_WIN32_WINNT=0x0A00"
+            ]
+        }
+    ],
+    "version": 4
+}
