@@ -231,3 +231,86 @@ bool Database::cambiarHabilitadaButaca(int id, int habilitada) {
     s.siguiente();
     return sqlite3_changes(db_) > 0;
 }
+
+// =============================================================================
+//  Peliculas
+// =============================================================================
+std::vector<Pelicula> Database::listarPeliculas(bool solo_cartelera) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // JOIN: trae tambien el nombre de la sala desde la tabla salas.
+    std::string sql =
+        "SELECT p.id, p.nombre, p.fecha_inicio, p.fecha_fin, p.precio, p.sala_id, s.nombre "
+        "FROM peliculas p JOIN salas s ON s.id = p.sala_id ";
+
+    // Cartelera: la fecha de HOY tiene que estar dentro del periodo.
+    // Las fechas se guardan como 'AAAA-MM-DD', asi que se pueden comparar
+    // como texto y el orden coincide con el orden real de las fechas.
+    if (solo_cartelera) {
+        sql += "WHERE date('now', 'localtime') BETWEEN p.fecha_inicio AND p.fecha_fin "
+               "AND s.habilitada = 1 ";
+    }
+    sql += "ORDER BY p.nombre";
+
+    std::vector<Pelicula> resultado;
+    {
+        Sentencia s(db_, sql);
+        while (s.siguiente()) {
+            Pelicula p;
+            p.id           = s.entero(0);
+            p.nombre       = s.texto(1);
+            p.fecha_inicio = s.texto(2);
+            p.fecha_fin    = s.texto(3);
+            p.precio       = s.real(4);
+            p.sala_id      = s.entero(5);
+            p.sala         = s.texto(6);
+            resultado.push_back(p);
+        }
+    }
+
+    // Horarios de cada pelicula (una consulta preparada, reutilizada).
+    Sentencia h(db_, "SELECT id, hora FROM funciones WHERE pelicula_id = ? ORDER BY hora");
+    for (Pelicula& p : resultado) {
+        h.reiniciar();
+        h.bind(1, p.id);
+        while (h.siguiente()) {
+            Funcion f;
+            f.id   = h.entero(0);
+            f.hora = h.texto(1);
+            p.horarios.push_back(f);
+        }
+    }
+    return resultado;
+}
+
+int Database::crearPelicula(const Pelicula& p, const std::vector<std::string>& horarios) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    // Transaccion: la pelicula y sus horarios se guardan todos o ninguno.
+    ejecutar("BEGIN TRANSACTION;");
+    try {
+        Sentencia ins(db_, "INSERT INTO peliculas (nombre, fecha_inicio, fecha_fin, precio, sala_id) "
+                           "VALUES (?, ?, ?, ?, ?)");
+        ins.bind(1, p.nombre);
+        ins.bind(2, p.fecha_inicio);
+        ins.bind(3, p.fecha_fin);
+        ins.bind(4, p.precio);
+        ins.bind(5, p.sala_id);
+        ins.siguiente();
+        int pelicula_id = static_cast<int>(sqlite3_last_insert_rowid(db_));
+
+        Sentencia fun(db_, "INSERT INTO funciones (pelicula_id, hora) VALUES (?, ?)");
+        for (const std::string& hora : horarios) {
+            fun.reiniciar();
+            fun.bind(1, pelicula_id);
+            fun.bind(2, hora);
+            fun.siguiente();
+        }
+
+        ejecutar("COMMIT;");
+        return pelicula_id;
+    } catch (...) {
+        ejecutar("ROLLBACK;");
+        throw;
+    }
+}

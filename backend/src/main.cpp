@@ -10,7 +10,10 @@
 //  Se ejecuta desde la carpeta raiz del proyecto (usar iniciar.bat).
 // =============================================================================
 #include <iostream>
+#include <regex>
+#include <set>
 #include <string>
+#include <vector>
 
 #include "httplib.h"
 #include "json.hpp"
@@ -77,6 +80,82 @@ std::string validarHabilitada(const json& j, int& habilitada) {
     habilitada = j["habilitada"].get<int>();
     if (habilitada != 0 && habilitada != 1)
         return "habilitada solo puede ser 0 o 1";
+    return "";
+}
+
+// ---- Fechas y horas -------------------------------------------------------
+// Fecha valida en formato AAAA-MM-DD (revisa tambien que el dia exista:
+// no acepta 2026-02-30).
+bool fechaValida(const std::string& f) {
+    static const std::regex formato(R"(^\d{4}-\d{2}-\d{2}$)");
+    if (!std::regex_match(f, formato)) return false;
+
+    int anio = std::stoi(f.substr(0, 4));
+    int mes  = std::stoi(f.substr(5, 2));
+    int dia  = std::stoi(f.substr(8, 2));
+    if (anio < 2000 || anio > 2100 || mes < 1 || mes > 12 || dia < 1) return false;
+
+    int dias_mes[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+    bool bisiesto = (anio % 4 == 0 && anio % 100 != 0) || anio % 400 == 0;
+    if (bisiesto) dias_mes[1] = 29;
+    return dia <= dias_mes[mes - 1];
+}
+
+// Hora valida en formato HH:MM de 24 horas (00:00 a 23:59).
+bool horaValida(const std::string& h) {
+    static const std::regex formato(R"(^([01]\d|2[0-3]):[0-5]\d$)");
+    return std::regex_match(h, formato);
+}
+
+// Revisa los datos de una pelicula nueva. Devuelve "" si todo esta bien.
+// La sala se valida aparte en la ruta, porque hay que consultar la BD.
+std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>& horarios) {
+    if (!j.contains("nombre") || !j["nombre"].is_string())
+        return "Falta el nombre de la pelicula";
+    if (!j.contains("fecha_inicio") || !j["fecha_inicio"].is_string() ||
+        !j.contains("fecha_fin")    || !j["fecha_fin"].is_string())
+        return "Faltan las fechas de exhibicion";
+    if (!j.contains("precio") || !j["precio"].is_number())
+        return "El precio debe ser un numero";
+    if (!j.contains("sala_id") || !j["sala_id"].is_number_integer())
+        return "Debe seleccionar una sala";
+    if (!j.contains("horarios") || !j["horarios"].is_array())
+        return "Faltan los horarios";
+
+    p.nombre       = j["nombre"].get<std::string>();
+    p.fecha_inicio = j["fecha_inicio"].get<std::string>();
+    p.fecha_fin    = j["fecha_fin"].get<std::string>();
+    p.precio       = j["precio"].get<double>();
+    p.sala_id      = j["sala_id"].get<int>();
+
+    p.nombre.erase(0, p.nombre.find_first_not_of(" \t"));
+    p.nombre.erase(p.nombre.find_last_not_of(" \t") + 1);
+    if (p.nombre.empty())
+        return "El nombre de la pelicula no puede estar vacio";
+
+    if (!fechaValida(p.fecha_inicio))
+        return "La fecha de inicio no es valida (use AAAA-MM-DD)";
+    if (!fechaValida(p.fecha_fin))
+        return "La fecha de finalizacion no es valida (use AAAA-MM-DD)";
+    // En formato AAAA-MM-DD el orden de texto es el orden de las fechas.
+    if (p.fecha_fin < p.fecha_inicio)
+        return "La fecha de finalizacion no puede ser antes de la fecha de inicio";
+
+    if (p.precio <= 0)
+        return "El precio debe ser mayor que 0";
+
+    if (j["horarios"].empty())
+        return "Debe agregar al menos un horario";
+
+    std::set<std::string> vistos;   // para detectar horarios repetidos
+    for (const auto& h : j["horarios"]) {
+        if (!h.is_string() || !horaValida(h.get<std::string>()))
+            return "Hay un horario que no es valido (use HH:MM, por ejemplo 19:30)";
+        std::string hora = h.get<std::string>();
+        if (!vistos.insert(hora).second)
+            return "El horario " + hora + " esta repetido";
+        horarios.push_back(hora);
+    }
     return "";
 }
 
@@ -164,6 +243,35 @@ int main(int argc, char* argv[]) {
             if (!db.cambiarHabilitadaButaca(id, habilitada))
                 return responderError(res, 404, "Butaca no encontrada");
             responderJson(res, json{{"ok", true}});
+        });
+
+        // Peliculas: todas, para el administrador (GET /api/peliculas)
+        svr.Get("/api/peliculas", [&](const httplib::Request&, httplib::Response& res) {
+            responderJson(res, db.listarPeliculas(false));
+        });
+
+        // Cartelera: solo las que se exhiben hoy (GET /api/cartelera)
+        svr.Get("/api/cartelera", [&](const httplib::Request&, httplib::Response& res) {
+            responderJson(res, db.listarPeliculas(true));
+        });
+
+        // Peliculas: registrar (POST /api/peliculas)
+        svr.Post("/api/peliculas", [&](const httplib::Request& req, httplib::Response& res) {
+            json j;
+            if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
+
+            Pelicula p;
+            std::vector<std::string> horarios;
+            std::string error = validarPelicula(j, p, horarios);
+            if (!error.empty()) return responderError(res, 400, error);
+
+            // La sala tiene que existir y estar habilitada.
+            auto sala = db.obtenerSala(p.sala_id);
+            if (!sala)                 return responderError(res, 400, "La sala seleccionada no existe");
+            if (sala->habilitada == 0) return responderError(res, 400, "La sala seleccionada esta inhabilitada");
+
+            int id = db.crearPelicula(p, horarios);
+            responderJson(res, json{{"ok", true}, {"id", id}}, 201);
         });
 
         // Si una ruta lanza una excepcion (por ejemplo un error de SQLite),

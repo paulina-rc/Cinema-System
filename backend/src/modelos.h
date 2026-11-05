@@ -10,6 +10,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include "json.hpp"
 
 using json = nlohmann::json;
@@ -50,5 +51,41 @@ inline void to_json(json& j, const Butaca& b) {
         {"agrupacion", b.agrupacion},
         {"numero",     b.numero},
         {"habilitada", b.habilitada}
+    };
+}
+
+// ------------------------------------------------------------ Tabla funciones
+// Un horario de una pelicula. funcion_id es lo que se usa al reservar.
+struct Funcion {
+    int         id = 0;
+    std::string hora;      // "HH:MM"
+};
+
+inline void to_json(json& j, const Funcion& f) {
+    j = json{ {"funcion_id", f.id}, {"hora", f.hora} };
+}
+
+// ------------------------------------------------------------ Tabla peliculas
+struct Pelicula {
+    int         id = 0;
+    std::string nombre;
+    std::string fecha_inicio;   // "AAAA-MM-DD"
+    std::string fecha_fin;      // "AAAA-MM-DD"
+    double      precio = 0.0;
+    int         sala_id = 0;
+    std::string sala;           // Nombre de la sala (viene del JOIN con salas)
+    std::vector<Funcion> horarios;
+};
+
+inline void to_json(json& j, const Pelicula& p) {
+    j = json{
+        {"id",           p.id},
+        {"nombre",       p.nombre},
+        {"fecha_inicio", p.fecha_inicio},
+        {"fecha_fin",    p.fecha_fin},
+        {"precio",       p.precio},
+        {"sala_id",      p.sala_id},
+        {"sala",         p.sala},
+        {"horarios",     p.horarios}
     };
 }

@@ -54,6 +54,16 @@ public:
     //    Devuelve false si la butaca no existe.
     bool cambiarHabilitadaButaca(int id, int habilitada);
 
+    // ---------------- Peliculas ----------------
+    // R: lista las peliculas con su sala y sus horarios.
+    //    solo_cartelera = true -> solo las que se exhiben HOY y cuya sala
+    //    esta habilitada (es lo que ve el cliente en el paso 2).
+    std::vector<Pelicula> listarPeliculas(bool solo_cartelera = false);
+
+    // C: inserta la pelicula y una funcion por cada horario.
+    //    Devuelve el id de la pelicula nueva.
+    int crearPelicula(const Pelicula& p, const std::vector<std::string>& horarios);
+
 private:
     sqlite3*   db_ = nullptr;   // "Conexion" a la base de datos
     std::mutex mutex_;          // Evita que dos peticiones (hilos) usen la
