@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cartelera | IMPERIUM Cinemas</title>
+    <link rel="stylesheet" href="css/estilos.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Archivo:wght@400;500;600&display=swap">
+</head>
+<body>
+    <div>
+        <div class="logo">
+            <h2>IMPERIUM Cinemas</h2>
+            <nav class="nav-principal">
+                <a href="#cartelera" class="nav-link active">Cartelera</a>
+                <!-- Pide usuario y contraseña antes de entrar al panel -->
+                <a href="admin-login.html" class="nav-link">Admin</a>
+            </nav>
+        </div>
+
+        <div class="cartelera-header">
+            <div class="cartelera-titulos">
+                <p>EN EXHIBICIÓN HOY</p>
+                <h1>CARTELERA</h1>
+            </div>
+
+            <a href="reserva.html" class="btn-reservar">Reservar butacas</a>
+        </div>
+
+
+        <!-- CARRUSEL DE PELÍCULAS: lo llena cartelera.js con los pósters
+             de las películas que están en exhibición hoy -->
+        <div class="carrusel" id="carrusel" hidden>
+
+            <!-- Contenedor de las imágenes -->
+            <div class="carrusel-imagenes" id="carruselImagenes"></div>
+
+            <!-- Botón para retroceder -->
+            <button class="carrusel-btn anterior" onclick="moverCarrusel(-1)" aria-label="Anterior">
+                &#10094;
+            </button>
+
+            <!-- Botón para avanzar -->
+            <button class="carrusel-btn siguiente" onclick="moverCarrusel(1)" aria-label="Siguiente">
+                &#10095;
+            </button>
+
+            <!-- Indicadores del carrusel -->
+            <div class="indicadores" id="indicadores"></div>
+        </div>
+
+
+        <!-- TARJETAS: una por película (GET /api/cartelera) -->
+        <div class="peliculas-container" id="cartelera">
+            <p class="cartelera-vacia">Cargando cartelera…</p>
+        </div>
+
+    </div>
+    <script src="js/cartelera.js"></script>
+</body>
+</html>

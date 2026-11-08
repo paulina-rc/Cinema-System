@@ -9,9 +9,13 @@
 //
 //  Se ejecuta desde la carpeta raiz del proyecto (usar iniciar.bat).
 // =============================================================================
+#include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <regex>
 #include <set>
+#include <thread>
 #include <string>
 #include <vector>
 
@@ -19,6 +23,7 @@
 #include "json.hpp"
 #include "Database.h"
 #include "ReservaTemporal.h"
+#include "Seguridad.h"
 
 using json = nlohmann::json;
 
@@ -161,6 +166,64 @@ std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>
     return "";
 }
 
+// ---- Poster de la pelicula -------------------------------------------------
+// El navegador manda la imagen dentro del JSON como texto "data URL":
+//     "data:image/jpeg;base64,/9j/4AAQSk..."
+// Aqui se convierte de base64 a bytes y se guarda como archivo en
+// frontend/img/peliculas/. En la base de datos solo queda la RUTA.
+const std::string CARPETA_POSTERS = "img/peliculas/";        // relativa a frontend/
+const size_t      MAX_IMAGEN      = 3 * 1024 * 1024;         // 3 MB en base64
+
+// Base64 -> bytes. Devuelve false si el texto trae caracteres invalidos.
+bool decodificarBase64(const std::string& texto, std::string& bytes) {
+    static const std::string tabla =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    int valor = 0, bits = 0;
+    bytes.clear();
+    for (char c : texto) {
+        if (c == '=') break;                      // relleno del final
+        size_t pos = tabla.find(c);
+        if (pos == std::string::npos) return false;
+        valor = (valor << 6) | static_cast<int>(pos);   // cada caracter son 6 bits
+        bits += 6;
+        if (bits >= 8) {                          // ya se junto un byte completo
+            bits -= 8;
+            bytes.push_back(static_cast<char>((valor >> bits) & 0xFF));
+        }
+    }
+    return true;
+}
+
+// Guarda el poster y deja en `ruta` lo que se guarda en la BD.
+// Devuelve "" si todo salio bien, o el mensaje de error.
+std::string guardarPoster(const std::string& data_url, std::string& ruta) {
+    // Solo se aceptan JPEG y PNG (el navegador siempre manda JPEG)
+    std::string extension;
+    std::string prefijo;
+    if (data_url.rfind("data:image/jpeg;base64,", 0) == 0) { prefijo = "data:image/jpeg;base64,"; extension = ".jpg"; }
+    else if (data_url.rfind("data:image/png;base64,", 0) == 0) { prefijo = "data:image/png;base64,"; extension = ".png"; }
+    else return "La imagen debe ser JPG o PNG";
+
+    if (data_url.size() > MAX_IMAGEN)
+        return "La imagen es demasiado grande";
+
+    std::string bytes;
+    if (!decodificarBase64(data_url.substr(prefijo.size()), bytes) || bytes.empty())
+        return "La imagen no es valida";
+
+    // Nombre unico con la hora actual en milisegundos
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+                  std::chrono::system_clock::now().time_since_epoch()).count();
+    ruta = CARPETA_POSTERS + "pelicula-" + std::to_string(ms) + extension;
+
+    std::error_code ec;
+    std::filesystem::create_directories("frontend/" + CARPETA_POSTERS, ec);
+    std::ofstream archivo("frontend/" + ruta, std::ios::binary);
+    if (!archivo) return "No se pudo guardar la imagen en el servidor";
+    archivo.write(bytes.data(), static_cast<std::streamsize>(bytes.size()));
+    return "";
+}
+
 // ---- Reservacion -----------------------------------------------------------
 // Quita espacios al inicio y al final.
 std::string recortar(std::string t) {
@@ -209,12 +272,76 @@ int contarDisponibles(const std::vector<std::vector<int>>& matriz) {
     return total;
 }
 
+// ---- Login del administrador -----------------------------------------------
+// Usuario que se crea solo la primera vez (si la tabla administradores esta vacia).
+// Cambie la contrasena con:  build\servidor.exe --cambiar-clave admin NUEVA_CLAVE
+const std::string ADMIN_INICIAL = "admin";
+const std::string CLAVE_INICIAL = "imperium2026";
+const size_t      MIN_CLAVE     = 8;
+
+// Saca el token del encabezado "Authorization: Bearer <token>".
+std::string tokenDe(const httplib::Request& req) {
+    const std::string prefijo = "Bearer ";
+    std::string h = req.get_header_value("Authorization");
+    return h.rfind(prefijo, 0) == 0 ? h.substr(prefijo.size()) : "";
+}
+
+// Guarda (o cambia) la contrasena de un administrador con una sal nueva.
+void guardarClave(Database& db, const std::string& usuario, const std::string& clave) {
+    std::string sal = textoAleatorio(16);
+    db.guardarAdmin(usuario, sal, hashClave(sal, clave));
+}
+
 int main(int argc, char* argv[]) {
+    // Modo especial: cambiar la contrasena sin arrancar el servidor
+    //   servidor.exe --cambiar-clave <usuario> <clave nueva>
+    if (argc > 1 && std::string(argv[1]) == "--cambiar-clave") {
+        if (argc != 4) {
+            std::cerr << "Uso: servidor.exe --cambiar-clave <usuario> <clave nueva>\n";
+            return 1;
+        }
+        if (std::string(argv[3]).size() < MIN_CLAVE) {
+            std::cerr << "La clave debe tener al menos " << MIN_CLAVE << " caracteres.\n";
+            return 1;
+        }
+        try {
+            Database db("database/cine.db");
+            guardarClave(db, argv[2], argv[3]);
+            std::cout << "Clave del usuario '" << argv[2] << "' guardada.\n";
+            return 0;
+        } catch (const std::exception& e) {
+            std::cerr << "[ERROR] " << e.what() << "\n";
+            return 1;
+        }
+    }
+
     int puerto = (argc > 1) ? std::stoi(argv[1]) : 8080;
 
     // ---------------------------------------------------------------- 1. BD
     try {
         static Database db("database/cine.db");
+
+        // Primer arranque: si no hay ningun administrador se crea el inicial.
+        if (db.contarAdmins() == 0) {
+            guardarClave(db, ADMIN_INICIAL, CLAVE_INICIAL);
+            std::cout << "Se creo el administrador inicial -> usuario: " << ADMIN_INICIAL
+                      << "  clave: " << CLAVE_INICIAL << "\n"
+                      << "Cambiela con: build\\servidor.exe --cambiar-clave "
+                      << ADMIN_INICIAL << " NUEVA_CLAVE\n";
+        }
+
+        // Sesiones abiertas del panel admin (viven en memoria)
+        static SesionesAdmin sesiones;
+
+        // Revisa que la peticion traiga un token de sesion valido.
+        // Si no, responde 401 y devuelve false (la ruta debe terminar ahi).
+        auto esAdmin = [&](const httplib::Request& req, httplib::Response& res) {
+            if (sesiones.usuario(tokenDe(req)).empty()) {
+                responderError(res, 401, "Debe iniciar sesion como administrador");
+                return false;
+            }
+            return true;
+        };
 
         // ------------------------------------------------------- 2. Servidor
         httplib::Server svr;
@@ -231,6 +358,46 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"mensaje", "pong"}});
         });
 
+        // =====================================================================
+        //  LOGIN DEL ADMINISTRADOR
+        // =====================================================================
+        // Entrar (POST /api/login) {"usuario": "...", "clave": "..."}
+        svr.Post("/api/login", [&](const httplib::Request& req, httplib::Response& res) {
+            json j;
+            if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
+            if (!j.contains("usuario") || !j["usuario"].is_string() ||
+                !j.contains("clave")   || !j["clave"].is_string())
+                return responderError(res, 400, "Escriba el usuario y la contrasena");
+
+            std::string usuario = recortar(j["usuario"].get<std::string>());
+            std::string clave   = j["clave"].get<std::string>();
+
+            auto admin = db.obtenerAdmin(usuario);
+            bool correcto = admin && igualesSeguro(hashClave(admin->sal, clave), admin->clave_hash);
+            if (!correcto) {
+                // Pequena espera para que adivinar contrasenas sea lento.
+                // El mensaje no dice si fallo el usuario o la clave.
+                std::this_thread::sleep_for(std::chrono::milliseconds(600));
+                return responderError(res, 401, "Usuario o contrasena incorrectos");
+            }
+
+            responderJson(res, json{{"ok", true}, {"token", sesiones.crear(admin->usuario)},
+                                    {"usuario", admin->usuario}});
+        });
+
+        // Revisar si la sesion sigue abierta (GET /api/sesion)
+        svr.Get("/api/sesion", [&](const httplib::Request& req, httplib::Response& res) {
+            std::string usuario = sesiones.usuario(tokenDe(req));
+            if (usuario.empty()) return responderError(res, 401, "Sesion vencida o inexistente");
+            responderJson(res, json{{"ok", true}, {"usuario", usuario}});
+        });
+
+        // Salir (POST /api/logout)
+        svr.Post("/api/logout", [&](const httplib::Request& req, httplib::Response& res) {
+            sesiones.cerrar(tokenDe(req));
+            responderJson(res, json{{"ok", true}});
+        });
+
         // Salas: lista todas (GET /api/salas)
         svr.Get("/api/salas", [&](const httplib::Request&, httplib::Response& res) {
             responderJson(res, db.listarSalas());
@@ -238,6 +405,7 @@ int main(int argc, char* argv[]) {
 
         // Salas: crear (POST /api/salas) -> genera tambien las butacas
         svr.Post("/api/salas", [&](const httplib::Request& req, httplib::Response& res) {
+            if (!esAdmin(req, res)) return;   // solo el administrador
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
 
@@ -254,6 +422,7 @@ int main(int argc, char* argv[]) {
 
         // Salas: habilitar / inhabilitar (PUT /api/salas/{id}/habilitada)
         svr.Put(R"(/api/salas/(\d+)/habilitada)", [&](const httplib::Request& req, httplib::Response& res) {
+            if (!esAdmin(req, res)) return;   // solo el administrador
             int id = std::stoi(req.matches[1]);
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -282,6 +451,7 @@ int main(int argc, char* argv[]) {
 
         // Butaca: marcar danada / reparada (PUT /api/butacas/{id}/habilitada)
         svr.Put(R"(/api/butacas/(\d+)/habilitada)", [&](const httplib::Request& req, httplib::Response& res) {
+            if (!esAdmin(req, res)) return;   // solo el administrador
             int id = std::stoi(req.matches[1]);
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -307,6 +477,7 @@ int main(int argc, char* argv[]) {
 
         // Peliculas: registrar (POST /api/peliculas)
         svr.Post("/api/peliculas", [&](const httplib::Request& req, httplib::Response& res) {
+            if (!esAdmin(req, res)) return;   // solo el administrador
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
 
@@ -320,8 +491,24 @@ int main(int argc, char* argv[]) {
             if (!sala)                 return responderError(res, 400, "La sala seleccionada no existe");
             if (sala->habilitada == 0) return responderError(res, 400, "La sala seleccionada esta inhabilitada");
 
-            int id = db.crearPelicula(p, horarios);
-            responderJson(res, json{{"ok", true}, {"id", id}}, 201);
+            // Poster (opcional): se guarda como archivo antes de insertar
+            if (j.contains("imagen") && j["imagen"].is_string() && !j["imagen"].get<std::string>().empty()) {
+                std::string error_imagen = guardarPoster(j["imagen"].get<std::string>(), p.imagen);
+                if (!error_imagen.empty()) return responderError(res, 400, error_imagen);
+            }
+
+            int id = 0;
+            try {
+                id = db.crearPelicula(p, horarios);
+            } catch (...) {
+                // Si la BD fallo, no dejar el archivo huerfano
+                if (!p.imagen.empty()) {
+                    std::error_code ec;
+                    std::filesystem::remove("frontend/" + p.imagen, ec);
+                }
+                throw;
+            }
+            responderJson(res, json{{"ok", true}, {"id", id}, {"imagen", p.imagen}}, 201);
         });
 
         // =====================================================================

@@ -1,0 +1,54 @@
+/* =============================================================================
+   admin-login.css - Página de inicio de sesión del administrador
+   La base (colores, .campo, .btn-principal, .error-form) viene de admin-salas.css
+   ========================================================================== */
+
+.login {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    gap: 18px;
+}
+
+.login-volver {
+    color: var(--gris);
+    text-decoration: none;
+    font-size: 14px;
+}
+.login-volver:hover { color: var(--crema); }
+
+.login-tarjeta {
+    width: 100%;
+    max-width: 400px;
+    padding: 32px 28px;
+}
+
+.login-titulo {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 28px 0 20px;
+}
+
+/* Contraseña con botón "Mostrar" dentro del campo */
+.clave-caja { position: relative; }
+.clave-caja input { padding-right: 84px; }
+
+.ver-clave {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--gris);
+    font-family: var(--texto);
+    font-size: 13px;
+    padding: 6px 8px;
+    cursor: pointer;
+}
+.ver-clave:hover { color: var(--crema); }
+
+.login-tarjeta .btn-principal { margin-top: 6px; }

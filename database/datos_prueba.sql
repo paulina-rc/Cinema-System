@@ -48,3 +48,22 @@ VALUES ('Pelicula vencida', '2026-08-01', '2026-09-30', 3000,
 INSERT INTO funciones (pelicula_id, hora) VALUES (1, '15:00');
 INSERT INTO funciones (pelicula_id, hora) VALUES (1, '19:00');
 INSERT INTO funciones (pelicula_id, hora) VALUES (2, '17:00');
+
+-- Peliculas de la cartelera original, con su poster (frontend/img/)
+INSERT INTO peliculas (nombre, fecha_inicio, fecha_fin, precio, sala_id, imagen) VALUES
+    ('Los Colegas del Barrio',      '2026-11-07', '2026-12-31', 3500, (SELECT id FROM salas WHERE nombre = 'Sala 1'), 'img/poster1.jpg'),
+    ('Donde están las rubias',      '2026-11-07', '2026-12-31', 3500, (SELECT id FROM salas WHERE nombre = 'Sala 1'), 'img/White_Chicks_Poster_Latino.webp'),
+    ('Son como niños',              '2026-11-07', '2026-12-31', 3500, (SELECT id FROM salas WHERE nombre = 'Sala 1'), 'img/7b86f2a7e80941d97c265348873a82c73450c0286ed1d1eeb7d86440ec707de5.jpg'),
+    ('¿Quién &$%! son los Miller?', '2026-11-07', '2026-12-31', 3500, (SELECT id FROM salas WHERE nombre = 'Sala 1'), 'img/images.jpg');
+
+INSERT INTO funciones (pelicula_id, hora)
+SELECT p.id, h.hora
+FROM peliculas p
+JOIN (SELECT 'Los Colegas del Barrio' AS nombre, '14:00' AS hora UNION ALL
+      SELECT 'Los Colegas del Barrio', '19:30' UNION ALL
+      SELECT 'Donde están las rubias', '15:15' UNION ALL
+      SELECT 'Donde están las rubias', '20:00' UNION ALL
+      SELECT 'Son como niños', '13:30' UNION ALL
+      SELECT 'Son como niños', '18:00' UNION ALL
+      SELECT '¿Quién &$%! son los Miller?', '16:30' UNION ALL
+      SELECT '¿Quién &$%! son los Miller?', '21:00') h ON h.nombre = p.nombre;

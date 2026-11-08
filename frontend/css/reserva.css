@@ -269,6 +269,7 @@ button { font-family: inherit; }
     font-size: 24px;
     cursor: pointer;
 }
+.btn-circulo:not(:disabled):hover { border-color: var(--gris); }
 .btn-circulo:disabled { opacity: 0.3; cursor: not-allowed; }
 
 
@@ -452,4 +453,14 @@ button { font-family: inherit; }
     .titulo { font-size: 40px; }
     .pasos li { font-size: 11px; }
     .tiquete-datos { grid-template-columns: 1fr; }
+}
+
+/* Póster real de la película (paso 2) */
+img.poster { object-fit: cover; display: block; }
+
+/* Celulares: butacas más pequeñas para que quepan bloques de hasta 10 columnas */
+@media (max-width: 480px) {
+    .mapa { gap: 22px; overflow-x: auto; }
+    .bloque { grid-template-columns: repeat(var(--columnas), 26px); gap: 6px; }
+    .butaca { width: 26px; height: 24px; font-size: 10px; }
 }

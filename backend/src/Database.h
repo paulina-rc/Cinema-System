@@ -64,6 +64,17 @@ public:
     //    Devuelve el id de la pelicula nueva.
     int crearPelicula(const Pelicula& p, const std::vector<std::string>& horarios);
 
+    // ---------------- Administradores ----------------
+    // R: busca un administrador por su nombre de usuario.
+    std::optional<Administrador> obtenerAdmin(const std::string& usuario);
+
+    // R: cuantos administradores hay (si es 0, main.cpp crea el inicial).
+    int contarAdmins();
+
+    // C/U: crea el administrador o le cambia la contrasena si ya existe.
+    void guardarAdmin(const std::string& usuario, const std::string& sal,
+                      const std::string& clave_hash);
+
     // ---------------- Clientes ----------------
     // C: registra al cliente del paso 1 y devuelve su id.
     int crearCliente(const std::string& nombre, const std::string& telefono);

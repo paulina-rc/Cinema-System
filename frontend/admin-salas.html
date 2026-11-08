@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es" class="sin-sesion">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salas y butacas | IMPERIUM Cinemas</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Archivo:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="css/admin-salas.css">
+</head>
+<body>
+
+    <div class="admin">
+
+        <!-- ============ MENÚ LATERAL ============ -->
+        <aside class="lateral">
+            <div class="lateral-marca">
+                <p class="marca">IMPERIUM CINEMAS</p>
+                <p class="marca-sub">ADMINISTRACIÓN</p>
+            </div>
+
+            <nav class="menu">
+                <a href="admin-peliculas.html" class="menu-link">Películas</a>
+                <a href="admin-salas.html" class="menu-link activo" aria-current="page">Salas y butacas</a>
+            </nav>
+
+            <a href="cartelera.html" class="menu-link menu-cartelera">Ver cartelera</a>
+
+            <!-- Sesión del administrador (admin-sesion.js) -->
+            <div class="sesion">
+                <p class="sesion-usuario">Sesión: <strong id="usuarioAdmin">admin</strong></p>
+                <button type="button" class="btn-secundario" id="btnCerrarSesion">Cerrar sesión</button>
+            </div>
+        </aside>
+
+
+        <!-- ============ CONTENIDO ============ -->
+        <main class="contenido">
+            <h1 class="titulo">SALAS Y BUTACAS</h1>
+
+            <div class="fila-superior">
+
+                <!-- Formulario: nueva sala (POST /api/salas) -->
+                <form class="tarjeta form-sala" id="formSala" novalidate>
+                    <h2>Nueva sala</h2>
+
+                    <div class="campo">
+                        <label for="nombreSala">Nombre de la sala</label>
+                        <input type="text" id="nombreSala" placeholder="Sala 4" maxlength="40" autocomplete="off">
+                    </div>
+
+                    <div class="campo">
+                        <label for="agrupaciones">Cantidad de agrupaciones</label>
+                        <input type="number" id="agrupaciones" placeholder="2" min="1" max="10" step="1">
+                    </div>
+
+                    <div class="campo">
+                        <label for="porAgrupacion">Butacas por agrupación</label>
+                        <input type="number" id="porAgrupacion" placeholder="42" min="1" max="60" step="1">
+                    </div>
+
+                    <p class="error-form" id="errorForm" hidden></p>
+
+                    <button type="submit" class="btn-principal" id="btnCrear">Crear sala y generar butacas</button>
+                </form>
+
+                <!-- Lista de salas (GET /api/salas) -->
+                <section class="lista-salas" id="listaSalas" aria-label="Salas registradas">
+                    <p class="vacio">Cargando salas…</p>
+                </section>
+            </div>
+
+            <!-- Mapa de la sala seleccionada (GET /api/salas/{id}/butacas) -->
+            <section class="tarjeta panel-mapa" id="panelMapa" hidden>
+                <div class="mapa-encabezado">
+                    <h2 id="tituloMapa">Mapa de sala</h2>
+                    <p class="gris">Toca una butaca para marcarla fuera de servicio</p>
+                </div>
+
+                <div class="mapa" id="mapa"></div>
+
+                <div class="leyenda">
+                    <span><i class="muestra habilitada"></i> Habilitada</span>
+                    <span><i class="muestra fuera"></i> Fuera de servicio</span>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Mensajes flotantes -->
+    <div class="toast" id="toast" role="status" hidden></div>
+
+    <!-- Primero revisa la sesión; si no hay, manda al login -->
+    <script src="js/admin-sesion.js"></script>
+    <script src="js/admin-salas.js"></script>
+</body>
+</html>

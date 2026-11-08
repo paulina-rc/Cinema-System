@@ -1,0 +1,342 @@
+/* =============================================================================
+   admin-salas.css - Panel de administración: salas y butacas
+   Mismos colores y fuentes que reserva.css (guía de estilo del proyecto)
+   ========================================================================== */
+
+:root {
+    --fondo:        #0F0E13;
+    --lateral:      #17151C;
+    --tarjeta:      #1A1820;
+    --campo:        #121116;
+    --borde:        #2E2A37;
+    --crema:        #F2EDE4;
+    --gris:         #A9A4B3;
+    --dorado:       #E9B949;
+    --butaca:       #4A4656;
+    --exito-fondo:  #13261C;
+    --exito-texto:  #7DD3A5;
+    --error:        #F07A80;
+
+    --titulos: 'Big Shoulders Display', sans-serif;
+    --texto:   'Archivo', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    background: var(--fondo);
+    color: var(--crema);
+    font-family: var(--texto);
+    min-height: 100vh;
+}
+
+[hidden] { display: none !important; }
+
+.gris { color: var(--gris); font-size: 14px; }
+
+
+/* ---------------- Estructura: menú lateral + contenido ---------------- */
+.admin {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+.lateral {
+    background: var(--lateral);
+    border-right: 1px solid var(--borde);
+    padding: 28px 18px;
+    display: flex;
+    flex-direction: column;
+}
+
+.lateral-marca { padding: 0 2px 40px; }
+
+.marca {
+    font-family: var(--titulos);
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: var(--dorado);
+}
+
+.marca-sub {
+    margin-top: 6px;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--gris);
+}
+
+.menu { display: flex; flex-direction: column; gap: 6px; }
+
+.menu-link {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: var(--gris);
+    text-decoration: none;
+    font-size: 15px;
+}
+.menu-link:hover  { color: var(--crema); }
+.menu-link.activo { background: #24212B; color: var(--crema); font-weight: 500; }
+
+.menu-cartelera { margin-top: 28px; }
+
+.contenido {
+    padding: 36px 48px 60px;
+    max-width: 1200px;
+    width: 100%;
+}
+
+.titulo {
+    font-family: var(--titulos);
+    font-weight: 800;
+    font-size: 48px;
+    line-height: 1;
+    margin-bottom: 30px;
+}
+
+
+/* ---------------- Tarjetas ---------------- */
+.tarjeta {
+    background: var(--tarjeta);
+    border: 1px solid var(--borde);
+    border-radius: 14px;
+}
+
+.tarjeta h2 { font-size: 18px; font-weight: 600; }
+
+.fila-superior {
+    display: grid;
+    grid-template-columns: minmax(280px, 0.8fr) 1.1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+
+/* ---------------- Formulario nueva sala ---------------- */
+.form-sala { padding: 24px; }
+.form-sala h2 { margin-bottom: 18px; }
+
+.campo { margin-bottom: 16px; }
+
+.campo label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.campo input {
+    width: 100%;
+    background: var(--campo);
+    border: 1px solid var(--borde);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--crema);
+    font-family: var(--texto);
+    font-size: 15px;
+}
+.campo input::placeholder { color: #6E6979; }
+.campo input:focus { outline: none; border-color: var(--dorado); }
+.campo input.invalido { border-color: var(--error); }
+
+.error-form {
+    color: var(--error);
+    font-size: 13px;
+    margin: -4px 0 14px;
+}
+
+.btn-principal {
+    width: 100%;
+    background: var(--crema);
+    color: #111014;
+    border: none;
+    border-radius: 999px;
+    padding: 14px 20px;
+    font-family: var(--texto);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.btn-principal:hover    { filter: brightness(0.94); }
+.btn-principal:disabled { opacity: 0.6; cursor: wait; }
+
+
+/* ---------------- Lista de salas ---------------- */
+.lista-salas { display: flex; flex-direction: column; gap: 12px; }
+
+.sala {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    border: 2px solid var(--borde);
+    transition: border-color 0.15s;
+}
+.sala:hover        { border-color: #45404F; }
+.sala.seleccionada { border-color: var(--dorado); }
+.sala.inhabilitada .sala-nombre { color: var(--gris); }
+
+.sala-info { flex: 1; min-width: 0; }
+.sala-nombre { font-size: 16px; font-weight: 600; }
+.sala-detalle { font-size: 13px; color: var(--gris); margin-top: 3px; }
+
+.estado {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+}
+.estado.activa      { background: var(--exito-fondo); color: var(--exito-texto); }
+.estado.inactiva    { background: #2A2731; color: var(--gris); }
+
+.btn-secundario {
+    background: transparent;
+    color: var(--crema);
+    border: 1px solid var(--borde);
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-family: var(--texto);
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-secundario:hover    { border-color: var(--gris); }
+.btn-secundario:disabled { opacity: 0.6; cursor: wait; }
+
+.vacio { color: var(--gris); font-size: 14px; padding: 16px 4px; }
+
+
+/* ---------------- Mapa de butacas ---------------- */
+.panel-mapa { margin-top: 28px; padding: 24px 24px 28px; }
+
+.mapa-encabezado {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 26px;
+}
+
+.mapa {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 28px 40px;
+}
+
+.bloque-titulo {
+    color: var(--gris);
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* Las columnas las define el JS con --columnas */
+.bloque {
+    display: grid;
+    grid-template-columns: repeat(var(--columnas), 30px);
+    gap: 8px;
+}
+
+.butaca {
+    width: 30px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: var(--butaca);
+    color: transparent;
+    font-family: var(--texto);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.butaca:hover { color: var(--crema); filter: brightness(1.2); }
+.butaca.fuera {
+    background: transparent;
+    border: 1px dashed var(--dorado);
+}
+.butaca.fuera:hover { color: var(--dorado); }
+
+.mapa.ocupado .butaca { pointer-events: none; opacity: 0.85; }
+
+.leyenda {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-top: 26px;
+    font-size: 14px;
+    color: var(--gris);
+}
+.leyenda span { display: flex; align-items: center; gap: 8px; }
+
+.muestra { width: 16px; height: 16px; border-radius: 4px; display: inline-block; }
+.muestra.habilitada { background: var(--butaca); }
+.muestra.fuera      { border: 1px dashed var(--dorado); }
+
+
+/* ---------------- Mensaje flotante ---------------- */
+.toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2A2731;
+    border: 1px solid var(--borde);
+    color: var(--crema);
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    max-width: 90%;
+    z-index: 10;
+}
+.toast.error { border-color: var(--error); color: var(--error); }
+.toast.exito { border-color: #245C3D; color: var(--exito-texto); }
+
+
+/* ---------------- Pantallas pequeñas ---------------- */
+@media (max-width: 960px) {
+    .fila-superior { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+    .admin { grid-template-columns: minmax(0, 1fr); }
+    .lateral { border-right: none; border-bottom: 1px solid var(--borde); padding: 18px 16px; }
+    .lateral-marca { padding-bottom: 14px; }
+    .menu { flex-direction: row; flex-wrap: wrap; }
+    .menu-cartelera { margin-top: 6px; }
+    .contenido { padding: 24px 16px 48px; }
+    .titulo { font-size: 38px; }
+    .sala { flex-wrap: wrap; }
+    .mapa { overflow-x: auto; justify-content: flex-start; }
+}
+
+
+/* ---------------- Sesión del administrador ---------------- */
+/* La página no se ve hasta que admin-sesion.js confirma la sesión */
+html.sin-sesion body { visibility: hidden; }
+
+.sesion {
+    margin-top: auto;            /* al fondo del menú lateral */
+    padding: 18px 14px 0;
+    border-top: 1px solid var(--borde);
+}
+.sesion-usuario { font-size: 13px; color: var(--gris); margin-bottom: 10px; }
+.sesion-usuario strong { color: var(--crema); font-weight: 500; }
+.sesion .btn-secundario { width: 100%; }
+
+@media (max-width: 720px) {
+    .sesion { margin-top: 12px; padding: 12px 0 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .sesion-usuario { margin: 0; }
+    .sesion .btn-secundario { width: auto; }
+}
+
+/* El menú lateral queda fijo al alto de la pantalla, así "Cerrar sesión" siempre se ve */
+@media (min-width: 721px) {
+    .lateral { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+}

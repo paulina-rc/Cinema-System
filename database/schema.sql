@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS peliculas (
     fecha_fin     TEXT    NOT NULL,
     precio        REAL    NOT NULL CHECK (precio > 0),
     sala_id       INTEGER NOT NULL,
+    imagen        TEXT    NOT NULL DEFAULT '',   -- ruta del poster en frontend/, ej. 'img/peliculas/pelicula-123.jpg'
 
     FOREIGN KEY (sala_id) REFERENCES salas(id),
     CHECK (fecha_fin >= fecha_inicio)      -- la fecha final no puede ser antes del inicio
@@ -107,6 +108,19 @@ CREATE TABLE IF NOT EXISTS reservaciones (
     -- una butaca solo puede reservarse UNA vez por funcion y por dia.
     -- Aunque el backend falle, la base de datos rechaza la doble reserva.
     UNIQUE (funcion_id, butaca_id, fecha)
+);
+
+-- -------------------------------------------------------------
+-- ADMINISTRADORES (login del panel admin)
+-- La contrasena NO se guarda: solo su hash SHA-256 con una "sal"
+-- aleatoria (ver backend/src/Seguridad.h). Si la tabla esta vacia,
+-- el servidor crea el usuario inicial al arrancar.
+-- -------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS administradores (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario     TEXT NOT NULL UNIQUE,
+    sal         TEXT NOT NULL,
+    clave_hash  TEXT NOT NULL
 );
 
 -- -------------------------------------------------------------

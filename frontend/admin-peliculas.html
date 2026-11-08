@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es" class="sin-sesion">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Películas | IMPERIUM Cinemas</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Archivo:wght@400;500;600;700&display=swap">
+    <!-- Reutiliza el diseño del panel (menú lateral, tarjetas, campos, botones) -->
+    <link rel="stylesheet" href="css/admin-salas.css">
+    <link rel="stylesheet" href="css/admin-peliculas.css">
+</head>
+<body>
+
+    <div class="admin">
+
+        <!-- ============ MENÚ LATERAL ============ -->
+        <aside class="lateral">
+            <div class="lateral-marca">
+                <p class="marca">IMPERIUM CINEMAS</p>
+                <p class="marca-sub">ADMINISTRACIÓN</p>
+            </div>
+
+            <nav class="menu">
+                <a href="admin-peliculas.html" class="menu-link activo" aria-current="page">Películas</a>
+                <a href="admin-salas.html" class="menu-link">Salas y butacas</a>
+            </nav>
+
+            <a href="cartelera.html" class="menu-link menu-cartelera">Ver cartelera</a>
+
+            <!-- Sesión del administrador (admin-sesion.js) -->
+            <div class="sesion">
+                <p class="sesion-usuario">Sesión: <strong id="usuarioAdmin">admin</strong></p>
+                <button type="button" class="btn-secundario" id="btnCerrarSesion">Cerrar sesión</button>
+            </div>
+        </aside>
+
+
+        <!-- ============ CONTENIDO ============ -->
+        <main class="contenido">
+            <h1 class="titulo">PELÍCULAS</h1>
+
+            <!-- Formulario: nueva película (POST /api/peliculas) -->
+            <form class="tarjeta form-pelicula" id="formPelicula" novalidate>
+
+                <div class="form-columnas">
+
+                    <!-- Póster -->
+                    <div class="campo campo-poster">
+                        <span class="etiqueta">Póster</span>
+                        <label class="poster-zona" id="zonaPoster" for="imagen">
+                            <img id="vistaPoster" alt="Vista previa del póster" hidden>
+                            <span class="poster-vacio" id="textoPoster">
+                                <strong>Subir imagen</strong>
+                                JPG, PNG o WEBP
+                            </span>
+                        </label>
+                        <input type="file" id="imagen" accept="image/jpeg,image/png,image/webp" class="oculto">
+                        <button type="button" class="link-quitar" id="btnQuitarImagen" hidden>Quitar imagen</button>
+                        <p class="error-campo" id="errorImagen"></p>
+                    </div>
+
+                    <div class="form-datos">
+                        <div class="campo">
+                            <label for="nombre">Nombre de la película</label>
+                            <input type="text" id="nombre" placeholder="Nombre" maxlength="80" autocomplete="off">
+                            <p class="error-campo" id="errorNombre"></p>
+                        </div>
+
+                        <div class="fila-3">
+                            <div class="campo">
+                                <label for="fechaInicio">Inicio de exhibición</label>
+                                <input type="date" id="fechaInicio">
+                                <p class="error-campo" id="errorFechaInicio"></p>
+                            </div>
+                            <div class="campo">
+                                <label for="fechaFin">Fin de exhibición</label>
+                                <input type="date" id="fechaFin">
+                                <p class="error-campo" id="errorFechaFin"></p>
+                            </div>
+                            <div class="campo">
+                                <label for="precio">Precio de la entrada (₡)</label>
+                                <input type="number" id="precio" placeholder="3500" min="1" step="50">
+                                <p class="error-campo" id="errorPrecio"></p>
+                            </div>
+                        </div>
+
+                        <div class="fila-3">
+                            <div class="campo">
+                                <label for="sala">Sala</label>
+                                <select id="sala">
+                                    <option value="">Cargando salas…</option>
+                                </select>
+                                <p class="error-campo" id="errorSala"></p>
+                            </div>
+                        </div>
+
+                        <div class="campo">
+                            <span class="etiqueta">Horarios</span>
+                            <div class="horarios-editor">
+                                <div class="chips" id="chipsHorarios"></div>
+                                <input type="time" id="nuevaHora" aria-label="Nuevo horario">
+                                <button type="button" class="btn-secundario" id="btnAgregarHora">Agregar horario</button>
+                            </div>
+                            <p class="error-campo" id="errorHorarios"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-acciones">
+                    <button type="submit" class="btn-principal btn-guardar" id="btnGuardar">Guardar película</button>
+                </div>
+            </form>
+
+
+            <!-- Lista (GET /api/peliculas) -->
+            <h2 class="subtitulo-seccion">Películas registradas</h2>
+
+            <div class="tarjeta tabla-contenedor">
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>Película</th>
+                            <th>Exhibición</th>
+                            <th>Horarios</th>
+                            <th>Precio</th>
+                            <th>Sala</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaPeliculas">
+                        <tr><td colspan="5" class="vacio">Cargando películas…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <!-- Mensajes flotantes -->
+    <div class="toast" id="toast" role="status" hidden></div>
+
+    <!-- Primero revisa la sesión; si no hay, manda al login -->
+    <script src="js/admin-sesion.js"></script>
+    <script src="js/admin-peliculas.js"></script>
+</body>
+</html>

@@ -28,6 +28,44 @@ La función `api()` del `app.js` del demo ya sirve tal cual con esta API.
 
 ---
 
+## 0. Login del administrador
+
+La página `admin-login.html` (botón **Admin** de la cartelera) pide usuario y
+contraseña. Las contraseñas se guardan como hash SHA-256 con sal en la tabla
+`administradores` (ver `backend/src/Seguridad.h`).
+
+Al primer arranque, si no hay administradores, el servidor crea
+`admin` / `imperium2026`. Para cambiar la contraseña (con el servidor apagado):
+
+```
+build\servidor.exe --cambiar-clave admin NUEVA_CLAVE
+```
+
+### `POST /api/login`
+```json
+{ "usuario": "admin", "clave": "..." }
+```
+Respuesta: `{ "ok": true, "token": "e44f...", "usuario": "admin" }` · 401 si no coincide.
+
+El navegador guarda el token en `sessionStorage` y lo manda así en las rutas
+de administrador:
+```
+Authorization: Bearer e44f...
+```
+La sesión dura 8 horas (o hasta reiniciar el servidor).
+
+### `GET /api/sesion`
+200 `{ "ok": true, "usuario": "admin" }` si el token sirve; 401 si no.
+
+### `POST /api/logout`
+Cierra la sesión del token. Respuesta: `{ "ok": true }`
+
+**Rutas que exigen sesión (401 sin token válido):** `POST /api/salas`,
+`PUT /api/salas/{id}/habilitada`, `PUT /api/butacas/{id}/habilitada` y
+`POST /api/peliculas`. Las de consulta (GET) y las de reservación siguen públicas.
+
+---
+
 ## 1. Salas (administrador)
 
 ### `GET /api/salas`
@@ -97,13 +135,20 @@ La sala se elige de una lista llenada con `GET /api/salas` (solo habilitadas).
   "fecha_fin": "2026-11-30",
   "precio": 4000,
   "sala_id": 1,
-  "horarios": ["14:00", "18:30"]
+  "horarios": ["14:00", "18:30"],
+  "imagen": "data:image/jpeg;base64,/9j/4AAQSk..."
 }
 ```
-Respuesta: `{ "ok": true, "id": 3 }`
+Respuesta: `{ "ok": true, "id": 3, "imagen": "img/peliculas/pelicula-1794110825815.jpg" }`
 
 Validaciones del backend: campos completos, `fecha_fin >= fecha_inicio`,
 precio mayor que 0, sala existente y habilitada, al menos un horario.
+
+**Póster (opcional):** el navegador lo achica (máx. 600 × 900) y lo manda como
+texto base64 en `imagen` (JPG o PNG, máx. 3 MB). El backend lo decodifica, lo
+guarda como archivo en `frontend/img/peliculas/` y en la columna
+`peliculas.imagen` guarda solo la ruta. `GET /api/peliculas` y
+`GET /api/cartelera` devuelven esa ruta en `imagen` (`""` si no tiene póster).
 
 ---
 

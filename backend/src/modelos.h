@@ -34,6 +34,16 @@ inline void to_json(json& j, const Sala& s) {
     };
 }
 
+// ------------------------------------------------------ Tabla administradores
+// Usuario del panel admin. La contrasena NO se guarda: solo su hash
+// (ver Seguridad.h). Este struct nunca se manda al navegador.
+struct Administrador {
+    int         id = 0;
+    std::string usuario;
+    std::string sal;          // texto aleatorio propio de este usuario
+    std::string clave_hash;   // hashClave(sal, contrasena)
+};
+
 // -------------------------------------------------------------- Tabla butacas
 // (agrupacion, numero) = (fila, columna) de la matriz de la sala.
 struct Butaca {
@@ -74,6 +84,7 @@ struct Pelicula {
     double      precio = 0.0;
     int         sala_id = 0;
     std::string sala;           // Nombre de la sala (viene del JOIN con salas)
+    std::string imagen;         // Ruta del poster, ej. "img/peliculas/pelicula-123.jpg" ("" = sin imagen)
     std::vector<Funcion> horarios;
 };
 
@@ -103,6 +114,7 @@ inline void to_json(json& j, const Pelicula& p) {
         {"precio",       p.precio},
         {"sala_id",      p.sala_id},
         {"sala",         p.sala},
+        {"imagen",       p.imagen},
         {"horarios",     p.horarios}
     };
 }

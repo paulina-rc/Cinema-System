@@ -115,6 +115,30 @@ Database::Database(const std::string& ruta_archivo) {
     // SQLite trae las llaves foraneas apagadas: hay que activarlas
     // cada vez que se abre la conexion.
     ejecutar("PRAGMA foreign_keys = ON;");
+
+    // Bases de datos creadas antes de agregar los posters no tienen la
+    // columna imagen: se agrega aqui una sola vez (las peliculas viejas
+    // quedan con imagen = '' y la pagina muestra un poster de reemplazo).
+    bool tiene_imagen = false;
+    {
+        Sentencia s(db_, "PRAGMA table_info(peliculas)");
+        while (s.siguiente()) {
+            if (s.texto(1) == "imagen") tiene_imagen = true;   // columna 1 = nombre
+        }
+    }
+    if (!tiene_imagen) {
+        ejecutar("ALTER TABLE peliculas ADD COLUMN imagen TEXT NOT NULL DEFAULT '';");
+    }
+
+    // Tabla de usuarios del panel admin (igual que en schema.sql).
+    // IF NOT EXISTS: en bases de datos viejas se crea; en las nuevas no hace nada.
+    ejecutar(
+        "CREATE TABLE IF NOT EXISTS administradores ("
+        "  id         INTEGER PRIMARY KEY AUTOINCREMENT,"
+        "  usuario    TEXT NOT NULL UNIQUE,"
+        "  sal        TEXT NOT NULL,"
+        "  clave_hash TEXT NOT NULL"
+        ");");
 }
 
 Database::~Database() {
@@ -128,6 +152,44 @@ void Database::ejecutar(const std::string& sql) {
         sqlite3_free(error);
         throw std::runtime_error("Error SQL: " + msg);
     }
+}
+
+// =============================================================================
+//  Administradores
+// =============================================================================
+std::optional<Administrador> Database::obtenerAdmin(const std::string& usuario) {
+    std::lock_guard<std::mutex> lock(mutex_);
+
+    Sentencia s(db_, "SELECT id, usuario, sal, clave_hash FROM administradores WHERE usuario = ?");
+    s.bind(1, usuario);
+    if (!s.siguiente()) return std::nullopt;
+
+    Administrador a;
+    a.id         = s.entero(0);
+    a.usuario    = s.texto(1);
+    a.sal        = s.texto(2);
+    a.clave_hash = s.texto(3);
+    return a;
+}
+
+int Database::contarAdmins() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    Sentencia s(db_, "SELECT COUNT(*) FROM administradores");
+    s.siguiente();
+    return s.entero(0);
+}
+
+void Database::guardarAdmin(const std::string& usuario, const std::string& sal,
+                            const std::string& clave_hash) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    // UPSERT: si el usuario ya existe, solo se cambia su sal y su hash.
+    Sentencia s(db_,
+        "INSERT INTO administradores (usuario, sal, clave_hash) VALUES (?, ?, ?) "
+        "ON CONFLICT(usuario) DO UPDATE SET sal = excluded.sal, clave_hash = excluded.clave_hash");
+    s.bind(1, usuario);
+    s.bind(2, sal);
+    s.bind(3, clave_hash);
+    s.siguiente();
 }
 
 // =============================================================================
@@ -240,7 +302,7 @@ std::vector<Pelicula> Database::listarPeliculas(bool solo_cartelera) {
 
     // JOIN: trae tambien el nombre de la sala desde la tabla salas.
     std::string sql =
-        "SELECT p.id, p.nombre, p.fecha_inicio, p.fecha_fin, p.precio, p.sala_id, s.nombre "
+        "SELECT p.id, p.nombre, p.fecha_inicio, p.fecha_fin, p.precio, p.sala_id, s.nombre, p.imagen "
         "FROM peliculas p JOIN salas s ON s.id = p.sala_id ";
 
     // Cartelera: la fecha de HOY tiene que estar dentro del periodo.
@@ -264,6 +326,7 @@ std::vector<Pelicula> Database::listarPeliculas(bool solo_cartelera) {
             p.precio       = s.real(4);
             p.sala_id      = s.entero(5);
             p.sala         = s.texto(6);
+            p.imagen       = s.texto(7);
             resultado.push_back(p);
         }
     }
@@ -289,13 +352,14 @@ int Database::crearPelicula(const Pelicula& p, const std::vector<std::string>& h
     // Transaccion: la pelicula y sus horarios se guardan todos o ninguno.
     ejecutar("BEGIN TRANSACTION;");
     try {
-        Sentencia ins(db_, "INSERT INTO peliculas (nombre, fecha_inicio, fecha_fin, precio, sala_id) "
-                           "VALUES (?, ?, ?, ?, ?)");
+        Sentencia ins(db_, "INSERT INTO peliculas (nombre, fecha_inicio, fecha_fin, precio, sala_id, imagen) "
+                           "VALUES (?, ?, ?, ?, ?, ?)");
         ins.bind(1, p.nombre);
         ins.bind(2, p.fecha_inicio);
         ins.bind(3, p.fecha_fin);
         ins.bind(4, p.precio);
         ins.bind(5, p.sala_id);
+        ins.bind(6, p.imagen);
         ins.siguiente();
         int pelicula_id = static_cast<int>(sqlite3_last_insert_rowid(db_));
 

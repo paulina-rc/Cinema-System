@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración | IMPERIUM Cinemas</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Archivo:wght@400;500;600;700&display=swap">
+    <!-- Colores, campos, botón y mensajes: los mismos del panel admin -->
+    <link rel="stylesheet" href="css/admin-salas.css">
+    <link rel="stylesheet" href="css/admin-login.css">
+</head>
+<body>
+
+    <main class="login">
+        <a href="cartelera.html" class="login-volver">← Volver a la cartelera</a>
+
+        <!-- POST /api/login -->
+        <form class="tarjeta login-tarjeta" id="formLogin" novalidate>
+            <p class="marca">IMPERIUM CINEMAS</p>
+            <p class="marca-sub">ADMINISTRACIÓN</p>
+
+            <h1 class="login-titulo">Iniciar sesión</h1>
+
+            <div class="campo">
+                <label for="usuario">Usuario</label>
+                <input type="text" id="usuario" autocomplete="username" maxlength="40" autofocus>
+            </div>
+
+            <div class="campo">
+                <label for="clave">Contraseña</label>
+                <div class="clave-caja">
+                    <input type="password" id="clave" autocomplete="current-password" maxlength="100">
+                    <button type="button" class="ver-clave" id="btnVerClave" aria-label="Mostrar contraseña">Mostrar</button>
+                </div>
+            </div>
+
+            <p class="error-form" id="errorLogin" role="alert" hidden></p>
+
+            <button type="submit" class="btn-principal" id="btnEntrar">Entrar</button>
+        </form>
+    </main>
+
+    <script src="js/admin-login.js"></script>
+</body>
+</html>

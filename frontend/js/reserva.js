@@ -145,7 +145,7 @@ function cancelarReservaTemporal() {
 
 $("btnCancelar").addEventListener("click", () => {
     cancelarReservaTemporal();
-    window.location.href = "index.html";
+    window.location.href = "cartelera.html";
 });
 
 // Si el cliente cierra la pestaña a medio proceso, se libera la matriz.
@@ -189,13 +189,20 @@ $("formCliente").addEventListener("submit", async (evento) => {
     const datos = validarPaso1();
     if (!datos) return;
 
-    const boton = evento.submitter;
+    const boton = evento.submitter || evento.target.querySelector("[type=submit]");
     boton.disabled = true;
     try {
-        const r = await llamarApi("/api/clientes", "POST", datos);
-        reserva.cliente_id = r.cliente_id;
-        reserva.nombre = datos.nombre;
-        reserva.telefono = datos.telefono;
+        // Si volvió con "Atrás" y no cambió nada, se reutiliza el mismo cliente
+        // (así no se crea un cliente repetido en la base de datos).
+        const mismosDatos = reserva.cliente_id &&
+            reserva.nombre === datos.nombre && reserva.telefono === datos.telefono;
+
+        if (!mismosDatos) {
+            const r = await llamarApi("/api/clientes", "POST", datos);
+            reserva.cliente_id = r.cliente_id;
+            reserva.nombre = datos.nombre;
+            reserva.telefono = datos.telefono;
+        }
         await cargarCartelera();
         irAPaso(2);
     } catch (e) {
@@ -211,6 +218,19 @@ $("formCliente").addEventListener("submit", async (evento) => {
 // =============================================================================
 async function cargarCartelera() {
     cartelera = await llamarApi("/api/cartelera");
+
+    // Si la función que tenía elegida ya no está (otra película, otro día),
+    // se borra la selección para no continuar con datos viejos.
+    if (reserva.funcion) {
+        const pelicula = cartelera.find((p) => p.id === reserva.pelicula.id);
+        const sigue = pelicula && pelicula.horarios.some((h) => h.funcion_id === reserva.funcion.funcion_id);
+        if (sigue) {
+            reserva.pelicula = pelicula;
+        } else {
+            reserva.pelicula = null;
+            reserva.funcion = null;
+        }
+    }
     dibujarCartelera();
 }
 
@@ -219,6 +239,7 @@ function dibujarCartelera() {
 
     if (cartelera.length === 0) {
         lista.innerHTML = `<p class="vacio">No hay películas en exhibición hoy.</p>`;
+        $("btnPaso2").disabled = true;
         return;
     }
 
@@ -234,7 +255,9 @@ function dibujarCartelera() {
 
         return `
             <article class="pelicula ${elegida ? "elegida" : ""}">
-                <div class="poster">${escaparHtml(p.nombre.charAt(0).toUpperCase())}</div>
+                ${p.imagen
+                    ? `<img class="poster" src="${escaparHtml(p.imagen)}" alt="Póster de ${escaparHtml(p.nombre)}">`
+                    : `<div class="poster">${escaparHtml(p.nombre.charAt(0).toUpperCase())}</div>`}
                 <div>
                     <h3>${escaparHtml(p.nombre)}</h3>
                     <p class="gris">${escaparHtml(p.sala)} · ${formatoColones(p.precio)} · hasta ${formatoFecha(p.fecha_fin)}</p>
@@ -258,14 +281,15 @@ $("listaPeliculas").addEventListener("click", (evento) => {
 });
 
 $("btnPaso2").addEventListener("click", async () => {
+    if (!reserva.funcion) return;
+    const boton = $("btnPaso2");
+    boton.disabled = true;   // evita doble clic mientras responde el backend
     try {
-        const r = await llamarApi(`/api/funciones/${reserva.funcion.funcion_id}/disponibles`);
-        reserva.disponibles = r.disponibles;
-        reserva.cantidad = Math.min(Math.max(reserva.cantidad, 1), Math.max(r.disponibles, 1));
-        prepararPaso3();
-        irAPaso(3);
+        await abrirPaso3();
     } catch (e) {
         mostrarError(e.message);
+    } finally {
+        boton.disabled = !reserva.funcion;
     }
 });
 
@@ -275,6 +299,23 @@ $("btnPaso2").addEventListener("click", async () => {
 // =============================================================================
 function maximoPermitido() {
     return Math.min(MAX_POR_RESERVA, reserva.disponibles);
+}
+
+// Consulta cuántas butacas quedan HOY en la función y la ajusta al contador.
+// (GET /api/funciones/{id}/disponibles)
+async function actualizarDisponibles() {
+    const r = await llamarApi(`/api/funciones/${reserva.funcion.funcion_id}/disponibles`);
+    reserva.disponibles = r.disponibles;
+    // La cantidad queda entre 1 y el máximo permitido
+    reserva.cantidad = Math.min(Math.max(reserva.cantidad, 1), Math.max(maximoPermitido(), 1));
+    prepararPaso3();
+}
+
+// Entrada al paso 3 (desde el paso 2, desde "Cambiar cantidad" o cuando la
+// reservación temporal expiró): siempre con el número de disponibles al día.
+async function abrirPaso3() {
+    await actualizarDisponibles();
+    irAPaso(3);
 }
 
 function prepararPaso3() {
@@ -297,14 +338,21 @@ function actualizarContador() {
     $("btnPaso3").disabled = reserva.disponibles === 0;
 }
 
-$("btnMenos").addEventListener("click", () => {
-    if (reserva.cantidad > 1) reserva.cantidad--;
+function cambiarCantidad(delta) {
+    const nueva = reserva.cantidad + delta;
+    if (nueva < 1 || nueva > maximoPermitido()) return;
+    reserva.cantidad = nueva;
     actualizarContador();
-});
+}
 
-$("btnMas").addEventListener("click", () => {
-    if (reserva.cantidad < maximoPermitido()) reserva.cantidad++;
-    actualizarContador();
+$("btnMenos").addEventListener("click", () => cambiarCantidad(-1));
+$("btnMas").addEventListener("click", () => cambiarCantidad(1));
+
+// Atajos de teclado en el paso 3: + / − o flechas arriba / abajo
+document.addEventListener("keydown", (e) => {
+    if (pasoActual !== 3) return;
+    if (e.key === "+" || e.key === "ArrowUp")   { e.preventDefault(); cambiarCantidad(1); }
+    if (e.key === "-" || e.key === "ArrowDown") { e.preventDefault(); cambiarCantidad(-1); }
 });
 
 // Pide al backend que cargue la matriz en memoria  (POST /api/reserva/iniciar)
@@ -328,8 +376,11 @@ $("btnPaso3").addEventListener("click", async () => {
         irAPaso(4);
     } catch (e) {
         mostrarError(e.message);
+        // Puede que otra persona haya reservado mientras tanto:
+        // se vuelve a consultar para que el contador muestre lo real.
+        await actualizarDisponibles().catch(() => {});
     } finally {
-        $("btnPaso3").disabled = false;
+        $("btnPaso3").disabled = reserva.disponibles === 0;
     }
 });
 
@@ -410,8 +461,8 @@ $("mapa").addEventListener("click", async (evento) => {
         pintarButaca(boton, r.estado);
         actualizarResumen();
     } catch (e) {
-        mostrarError(e.message);
-        if (e.estado === 404) volverAlInicioDeButacas();
+        if (e.estado === 404) volverAlInicioDeButacas(e.message);
+        else mostrarError(e.message);
     } finally {
         $("mapa").classList.remove("ocupado");
     }
@@ -441,14 +492,26 @@ function actualizarResumen() {
 }
 
 // La reservación temporal expiró: se vuelve a cargar desde el paso 3.
-function volverAlInicioDeButacas() {
+// El mensaje se muestra DESPUÉS de cambiar de paso (irAPaso oculta el anterior).
+async function volverAlInicioDeButacas(mensaje) {
     reserva.token = null;
-    irAPaso(3);
+    try {
+        await abrirPaso3();
+        if (mensaje) mostrarError(mensaje);
+    } catch (e) {
+        irAPaso(3);
+        mostrarError(e.message);
+    }
 }
 
-$("btnCambiarCantidad").addEventListener("click", () => {
+$("btnCambiarCantidad").addEventListener("click", async () => {
     cancelarReservaTemporal();
-    irAPaso(3);
+    try {
+        await abrirPaso3();
+    } catch (e) {
+        mostrarError(e.message);
+        irAPaso(3);
+    }
 });
 
 $("btnPaso4").addEventListener("click", () => {
@@ -473,8 +536,6 @@ $("btnPagar").addEventListener("click", async () => {
         reserva.token = null;   // el backend ya borró la matriz temporal
         mostrarExito(r);
     } catch (e) {
-        mostrarError(e.message);
-
         if (e.estado === 409 && e.datos.matriz) {
             // Otra persona ganó una butaca: el backend manda la matriz al día.
             reserva.matriz = e.datos.matriz;
@@ -483,11 +544,15 @@ $("btnPagar").addEventListener("click", async () => {
             dibujarMapa();
             actualizarResumen();
             irAPaso(4);
+            mostrarError(e.message);   // después de cambiar de paso, para que se vea
         } else if (e.estado === 404) {
-            volverAlInicioDeButacas();
+            volverAlInicioDeButacas(e.message);
+        } else {
+            mostrarError(e.message);
         }
     } finally {
-        $("btnPagar").disabled = false;
+        // Si ya se pagó (token borrado), el botón queda bloqueado para no pagar dos veces
+        $("btnPagar").disabled = reserva.token === null;
     }
 });
 
@@ -496,8 +561,12 @@ function mostrarExito(r) {
         ? r.butacas.slice(0, -1).join(", ") + " y " + r.butacas.at(-1)
         : r.butacas[0];
 
+    const inicio = r.butacas.length > 1
+        ? `Tus butacas ${butacas} quedaron reservadas`
+        : `Tu butaca ${butacas} quedó reservada`;
+
     $("textoExito").textContent =
-        `Tus butacas ${butacas} quedaron reservadas para ${r.pelicula}, ` +
+        `${inicio} para ${r.pelicula}, ` +
         `hoy a las ${formatoHora(r.hora)} en ${r.sala}. Total pagado: ${formatoColones(r.total)}.`;
 
     $("bloqueConfirmar").hidden = true;
@@ -514,7 +583,7 @@ function mostrarExito(r) {
         actualizar();
         if (segundos <= 0) {
             clearInterval(intervalo);
-            window.location.href = "index.html";
+            window.location.href = "cartelera.html";
         }
     }, 1000);
 }

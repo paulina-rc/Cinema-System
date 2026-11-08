@@ -10,6 +10,6 @@ if not exist build\servidor.exe (
   pause & exit /b 1
 )
 
-start "" http://localhost:8080
+start "" http://localhost:8080/cartelera.html
 build\servidor.exe 8080
 pause
