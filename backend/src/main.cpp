@@ -353,6 +353,11 @@ int main(int argc, char* argv[]) {
         }
 
         // ------------------------------------------------------- 3. Rutas
+        // Raiz: ya no existe index.html, la pagina principal es la cartelera
+        svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
+            res.set_redirect("/cartelera.html");
+        });
+
         // Prueba
         svr.Get("/api/ping", [](const httplib::Request&, httplib::Response& res) {
             responderJson(res, json{{"mensaje", "pong"}});
