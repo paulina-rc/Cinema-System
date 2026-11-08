@@ -4,13 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cartelera | IMPERIUM Cinemas</title>
+    <link rel="icon" type="image/png" href="img/logo.png">
     <link rel="stylesheet" href="css/estilos.css">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Archivo:wght@400;500;600&display=swap">
 </head>
 <body>
     <div>
         <div class="logo">
-            <h2>IMPERIUM Cinemas</h2>
+            <!-- Logo + nombre: vuelven al inicio de la cartelera -->
+            <a href="cartelera.html" class="marca">
+                <img src="img/logo.png" alt="" class="marca-logo">
+                <h2>IMPERIUM Cinemas</h2>
+            </a>
             <nav class="nav-principal">
                 <a href="#cartelera" class="nav-link active">Cartelera</a>
                 <!-- Pide usuario y contraseña antes de entrar al panel -->
@@ -56,6 +61,15 @@
         </div>
 
     </div>
+
+
+    <!-- POP-UP DE DETALLE: <dialog> nativo, ya trae Esc, foco y ::backdrop.
+         cartelera.js llena #modalContenido con la película elegida -->
+    <dialog class="modal-pelicula" id="modalPelicula" aria-label="Detalle de la película">
+        <button type="button" class="modal-cerrar" onclick="cerrarDetalle()" aria-label="Cerrar">&#10005;</button>
+        <div class="modal-contenido" id="modalContenido"></div>
+    </dialog>
+
     <script src="js/cartelera.js"></script>
 </body>
 </html>
