@@ -24,6 +24,9 @@ Para detener el servidor: `Ctrl + C` en la ventana del servidor.
 Se debe ejecutar desde la carpeta raíz, porque el servidor busca
 `frontend/` y `database/` de forma relativa.
 
+Links para acceso a la seccion del administrador:
+
+
 ## Estructura
 
 ```text
