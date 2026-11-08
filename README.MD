@@ -1,108 +1,114 @@
 # Cinema System
 
-Sistema web de administración y reservación de butacas para un cine.
+A web app for a movie theater. Customers can see the movies and book seats.
+The admin can manage rooms, seats and movies.
 
-- **Frontend:** HTML, CSS y JavaScript (`frontend/`)
-- **Backend:** servidor HTTP en C++17 (`backend/`)
-- **Base de datos:** SQLite en un solo archivo (`database/cine.db`)
+- **Frontend:** HTML, CSS and JavaScript (`frontend/`)
+- **Backend:** an HTTP server written in C++17 (`backend/`)
+- **Database:** SQLite, saved in one file (`database/cine.db`)
 
-El navegador nunca toca la base de datos: le pide todo al servidor C++ por una
-API HTTP, y el servidor es el único que lee y escribe en SQLite.
+The browser never talks to the database directly. It asks the C++ server
+for everything through an HTTP API. Only the server reads and writes SQLite.
 
-## Cómo ejecutarlo (Windows)
+## How to run it (Windows)
 
-Requisito: `g++` de MSYS2 con `C:\msys64\ucrt64\bin` en el `PATH`.
-Las librerías (cpp-httplib, nlohmann/json y SQLite) ya vienen en
-`backend/third_party/`, no hay que instalar nada más.
+You need `g++` from MSYS2, with `C:\msys64\ucrt64\bin` in your `PATH`.
+The libraries (cpp-httplib, nlohmann/json and SQLite) are already in
+`backend/third_party/`. You don't need to install anything else.
 
 ```text
-.\compilar.bat     (la primera vez tarda ~1 min porque compila SQLite)
-.\iniciar.bat      (abre la cartelera en el navegador)
+.\compilar.bat     (builds the server; the first time takes about 1 minute)
+.\iniciar.bat      (starts the server and opens the movie listings page)
 ```
 
-Para detener el servidor: `Ctrl + C` en la ventana del servidor.
-Se debe ejecutar desde la carpeta raíz, porque el servidor busca
-`frontend/` y `database/` de forma relativa.
+To stop the server, press `Ctrl + C` in the server window.
 
-## Páginas
+Always run these from the main project folder. The server looks for
+`frontend/` and `database/` starting from there.
 
-Con el servidor encendido:
+## Pages
 
-| Página | Para qué |
+When the server is running:
+
+| Page | What it is for |
 |---|---|
-| http://localhost:8080/ | Página principal: redirige a `cartelera.html` |
-| http://localhost:8080/cartelera.html | Cartelera pública: películas en exhibición hoy |
-| http://localhost:8080/reserva.html | Reservación de butacas para el cliente (5 pasos) |
-| http://localhost:8080/admin-login.html | Inicio de sesión del administrador |
-| http://localhost:8080/admin-salas.html | Admin: crear salas, habilitar/inhabilitar salas y butacas |
-| http://localhost:8080/admin-peliculas.html | Admin: registrar películas con póster, sala, precio, fechas y horarios |
+| http://localhost:8080/ | Home page. It sends you to `cartelera.html` |
+| http://localhost:8080/cartelera.html | Public movie listings: movies showing today |
+| http://localhost:8080/reserva.html | Seat booking for customers (5 steps) |
+| http://localhost:8080/admin-login.html | Admin login |
+| http://localhost:8080/admin-salas.html | Admin: add rooms, turn rooms and seats on or off |
+| http://localhost:8080/admin-peliculas.html | Admin: add movies with poster, room, price, dates and showtimes |
 
-Las dos páginas `admin-*` piden iniciar sesión; si no hay sesión, mandan a
-`admin-login.html`. Desde la cartelera se llega con el enlace **Admin** del menú.
+The two `admin-*` pages need a login. If you are not logged in, they send you
+to `admin-login.html`. From the movie listings page, click **Admin** in the
+top menu.
 
-### Usuario del administrador
+### Admin user
 
-La primera vez que arranca el servidor, si la tabla `administradores` está
-vacía, se crea este usuario (también se muestra en la consola):
+The first time the server starts, if there are no admins yet, it creates
+this user. It also prints it in the server window.
 
-| Usuario | Contraseña inicial |
+| User | First password |
 |---|---|
 | `admin` | `imperium2026` |
 
-Para cambiar la contraseña (desde la carpeta raíz, mínimo 8 caracteres):
+To change the password, run this from the main project folder.
+The new password needs at least 8 characters.
 
 ```text
-build\servidor.exe --cambiar-clave admin NUEVA_CLAVE
+build\servidor.exe --cambiar-clave admin NEW_PASSWORD
 ```
 
-Ese comando solo guarda la clave nueva y termina, no arranca el servidor.
-La sesión dura 8 horas y se pierde si se reinicia el servidor.
+This command only saves the new password and then stops. It does not start
+the server.
 
+A login lasts 8 hours. If the server restarts, you need to log in again.
 
-## Estructura
+## Folders and files
 
 ```text
 Cinema-System/
 ├── frontend/
-│   ├── cartelera.html        Página principal pública (carrusel + tarjetas + detalle)
-│   ├── reserva.html          Reservación de butacas del cliente
-│   ├── admin-login.html      Login del administrador
-│   ├── admin-salas.html      Admin de salas y butacas
-│   ├── admin-peliculas.html  Admin de películas
-│   ├── css/                  Un archivo de estilos por página
-│   ├── js/                   Un archivo por página + admin-sesion.js (protege el panel)
+│   ├── cartelera.html        Home page: movie carousel, movie cards and movie details
+│   ├── reserva.html          Seat booking for customers
+│   ├── admin-login.html      Admin login
+│   ├── admin-salas.html      Admin page for rooms and seats
+│   ├── admin-peliculas.html  Admin page for movies
+│   ├── css/                  One style file per page
+│   ├── js/                   One script per page, plus admin-sesion.js (keeps admin pages private)
 │   └── img/
-│       ├── logo.png          Logo del cine (encabezado y favicon)
-│       └── peliculas/        Pósters subidos desde el admin (los crea el servidor)
+│       ├── logo.png          Cinema logo (page header and browser tab icon)
+│       └── peliculas/        Posters uploaded by the admin (the server creates this folder)
 ├── backend/
 │   ├── src/
-│   │   ├── main.cpp          Rutas de la API, validaciones y login
-│   │   ├── Database.h/.cpp   Acceso a datos: todo el SQL está aquí
-│   │   ├── modelos.h         Structs de cada tabla + conversión a JSON
-│   │   ├── Seguridad.h       Hash SHA-256 con sal de las contraseñas y sesiones del admin (token de 8 h)
-│   │   └── ReservaTemporal.h Matriz en memoria de la reserva en curso; solo se guarda en SQLite al confirmar
-│   └── third_party/   httplib, json y sqlite (no se modifican)
+│   │   ├── main.cpp          API routes, data checks and login
+│   │   ├── Database.h/.cpp   Database access: all the SQL is here
+│   │   ├── modelos.h         One struct per table, and how to turn it into JSON
+│   │   ├── Seguridad.h       Keeps passwords safe (salted SHA-256 hash) and tracks admin logins (8 hours)
+│   │   └── ReservaTemporal.h Holds the seats a customer is picking in memory; saves them to SQLite only when they confirm
+│   └── third_party/          httplib, json and sqlite (do not change these)
 ├── database/
-│   ├── cine.db            Base de datos
-│   ├── schema.sql         Estructura de las tablas
-│   └── datos_prueba.sql   Datos de ejemplo
-├── docs/              API, guía de estilo, diagramas y capturas
-├── compilar.bat
-└── iniciar.bat
+│   ├── cine.db               The database
+│   ├── schema.sql            Table structure
+│   └── datos_prueba.sql      Sample data
+├── docs/                     API, style guide, diagrams and screenshots
+├── compilar.bat              Builds the server
+└── iniciar.bat               Starts the server
 ```
 
-## Base de datos
+## Database
 
-Tablas: `salas`, `butacas`, `peliculas`, `funciones`, `clientes`,
-`reservaciones` y `administradores`. La estructura completa está en
-`database/schema.sql`.
+Tables: `salas` (rooms), `butacas` (seats), `peliculas` (movies),
+`funciones` (showtimes), `clientes` (customers), `reservaciones` (bookings)
+and `administradores` (admins). The full structure is in `database/schema.sql`.
 
-- `peliculas.imagen`: ruta del póster dentro de `frontend/`
-  (por ejemplo `img/peliculas/pelicula-123.jpg`); vacía si no tiene póster.
-- `administradores`: usuarios del panel admin (`usuario`, `sal`,
-  `clave_hash`). La contraseña no se guarda, solo su hash con sal.
+- `peliculas.imagen`: where the poster is, inside `frontend/`
+  (for example `img/peliculas/pelicula-123.jpg`). It is empty if the movie
+  has no poster.
+- `administradores`: admin users (`usuario`, `sal`, `clave_hash`).
+  The password itself is never saved, only a salted hash of it.
 
-Para crearla desde cero (terminal MSYS2, en la carpeta `database/`):
+To create the database from zero (MSYS2 terminal, inside `database/`):
 
 ```text
 sqlite3 cine.db < schema.sql
@@ -111,15 +117,15 @@ sqlite3 cine.db < datos_prueba.sql
 
 ## API
 
-Las rutas, lo que reciben y lo que responden están en
+All routes, what they receive and what they send back are in
 [`docs/rutas-api.md`](docs/rutas-api.md).
 
-## Estado
+## Status
 
-| Módulo | Backend | Frontend |
+| Part | Backend | Frontend |
 |---|---|---|
-| Salas y butacas | Listo | Listo |
-| Películas (con póster y horarios) | Listo | Listo |
-| Reservación (matriz en memoria) | Listo | Listo |
-| Login del administrador | Listo | Listo |
-| Cartelera (carrusel y detalle de película) | Listo | Listo |
+| Rooms and seats | Done | Done |
+| Movies (with poster and showtimes) | Done | Done |
+| Seat booking (seats kept in memory until confirmed) | Done | Done |
+| Admin login | Done | Done |
+| Movie listings (carousel and movie details) | Done | Done |
