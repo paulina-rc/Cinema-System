@@ -8,6 +8,24 @@
     border-bottom: 2px solid #2E2A37;
 }
 
+/* Logo + nombre: un solo link, alineados en fila */
+.marca {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.marca h2 {
+    margin: 0;               /* Sin margen el texto queda centrado con el logo */
+}
+
+.marca-logo {
+    height: 48px;
+    width: auto;
+    display: block;
+}
+
 body {
     background-color: #0F0E13;
 }
@@ -90,6 +108,17 @@ h3 {
     border: 1px solid #35303b; /* Borde de la tarjeta */
     border-radius: 14px; /* Esquinas redondeadas */
     overflow: hidden; /* Evita que el contenido salga de la tarjeta */
+    cursor: pointer; /* Se abre el detalle al hacer clic */
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Hover y foco con teclado: se nota que la tarjeta es clickeable */
+.pelicula:hover,
+.pelicula:focus-visible {
+    transform: translateY(-4px);
+    border-color: #E9B949;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+    outline: none;
 }
 
 /* ESPACIO DEL PÓSTER */
@@ -142,34 +171,106 @@ h3 {
 
 /* CONTENEDOR PRINCIPAL */
 .carrusel {
-    height:570px;       /* Reduce la altura del carrusel */
+    height: 460px;       /* Alto en escritorio */
     max-width: 1160px;   /* Ancho máximo */
-    width: 100%;          /* Ocupa el 90% de la pantalla */
+    width: 90%;          /* Mismo ancho que las tarjetas */
     margin: 50px auto;   /* Centra el carrusel */
     overflow: hidden;    /* Oculta lo que sobresalga */
     position: relative;  /* Permite colocar las flechas encima */
     border-radius: 15px; /* Redondea las esquinas */
+    background: #1c1920;
 }
 
 /* CONTENEDOR DE SLIDES */
 .carrusel-imagenes {
-    display: flex;            /* Coloca las imágenes en fila */
-    height: 300%;             /* Ocupa toda la altura */
+    display: flex;            /* Coloca los slides en fila */
+    height: 100%;             /* Igual al carrusel (antes 300% lo desbordaba) */
     transition: transform 0.5s ease; /* Animación al cambiar */
 }
 
-/* CADA IMAGEN */
+/* CADA SLIDE */
 .slide {
     min-width: 100%;           /* Cada slide ocupa todo el carrusel */
     height: 100%;              /* Ocupa toda la altura */
+    position: relative;        /* Base para el fondo desenfocado */
+    overflow: hidden;          /* Recorta el borde borroso del blur */
 }
 
-.slide img {
-    width: 100%;         /* Ocupa todo el ancho */
-    height: 80%;        /* Se adapta a la altura */
-    object-fit: cover;   /* Evita deformaciones */
-    object-position: center; /* Centra la imagen */
-    display: block;      /* Elimina espacios sobrantes */
+/* Fondo: el póster desenfocado. Aquí sí se usa cover porque solo
+   decora; el póster real se muestra completo encima. */
+.slide-fondo {
+    position: absolute;
+    inset: -30px;              /* Más grande que el slide: oculta los bordes claros del blur */
+    width: calc(100% + 60px);
+    height: calc(100% + 60px);
+    object-fit: cover;
+    filter: blur(24px) brightness(0.55);
+}
+
+/* Degradado oscuro: el texto de la derecha se lee sobre cualquier póster */
+.slide::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(15, 14, 19, 0.35) 0%, rgba(15, 14, 19, 0.85) 60%, rgba(15, 14, 19, 0.95) 100%);
+}
+
+.slide-contenido {
+    position: relative;
+    z-index: 1;                /* Por encima del fondo y del degradado */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 48px;
+    padding: 36px 90px;        /* Deja lugar a las flechas */
+    box-sizing: border-box;
+}
+
+/* Póster completo, sin recortes */
+.slide-poster {
+    height: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.6);
+    flex-shrink: 0;
+}
+
+.slide-info {
+    min-width: 0;              /* Permite que nombres largos hagan salto de línea */
+}
+
+.slide-titulo {
+    font-size: 56px;
+    line-height: 1;
+    margin: 0 0 12px;
+    color: #F2EDE4;
+    text-transform: uppercase;
+}
+
+.slide-detalle {
+    font-family: Archivo, sans-serif;
+    font-size: 16px;
+    color: #b9b5c8;
+    margin: 0 0 18px;
+}
+
+.btn-detalles {
+    margin-top: 26px;
+    background: #E9B949;
+    color: #111014;
+    border: none;
+    border-radius: 30px;
+    padding: 13px 28px;
+    font-family: Archivo, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.btn-detalles:hover {
+    background: #f5c542;
 }
 
 /* BOTONES DE NAVEGACIÓN */
@@ -185,6 +286,7 @@ h3 {
     height: 45px;              /* Alto */
     cursor: pointer;           /* Cursor de mano */
     font-size: 20px;           /* Tamaño de flecha */
+    z-index: 2;                /* Por encima del contenido del slide */
 }
 
 .anterior {
@@ -203,6 +305,7 @@ h3 {
     transform: translateX(-50%);
     display: flex;             /* Coloca los puntos en fila */
     gap: 10px;                 /* Espacio entre puntos */
+    z-index: 2;                /* Por encima del contenido del slide */
 }
 
 .punto {
@@ -260,4 +363,189 @@ h3 {
     display: flex;
     align-items: center;
     gap: 28px;
+}
+
+
+/* ---------------- Pop-up de detalle (<dialog>) ---------------- */
+.modal-pelicula {
+    width: min(880px, 92vw);
+    max-height: 90vh;
+    padding: 0;                /* Sin padding: un clic en el <dialog> mismo es "afuera" */
+    border: 1px solid #35303b;
+    border-radius: 16px;
+    background: #1c1920;
+    color: #F2EDE4;
+    overflow: auto;
+}
+
+.modal-pelicula[open] {
+    animation: modal-entrada 0.22s ease-out;
+}
+
+.modal-pelicula::backdrop {
+    background: rgba(8, 7, 10, 0.78);
+    backdrop-filter: blur(3px);
+}
+
+@keyframes modal-entrada {
+    from { opacity: 0; transform: translateY(16px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+.modal-cerrar {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(15, 14, 19, 0.7);
+    color: #F2EDE4;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.modal-cerrar:hover {
+    background: #29232e;
+    color: #E9B949;
+}
+
+.modal-contenido {
+    display: flex;
+    gap: 32px;
+    padding: 28px;
+}
+
+.modal-poster {
+    width: 300px;
+    flex-shrink: 0;
+}
+
+.modal-poster img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #29232e;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+}
+
+.modal-poster .poster-reemplazo {
+    height: auto;
+    aspect-ratio: 2 / 3;
+    border-radius: 10px;
+}
+
+.modal-info {
+    flex: 1;
+    min-width: 0;
+    font-family: Archivo, sans-serif;
+    padding-top: 8px;
+}
+
+.modal-titulo {
+    font-size: 44px;
+    line-height: 1;
+    margin: 0 40px 20px 0;     /* El margen derecho evita chocar con la ✕ */
+    color: #F2EDE4;
+    text-transform: uppercase;
+}
+
+/* Sala / Precio / Período en dos columnas: etiqueta y valor */
+.modal-datos {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px 20px;
+    margin: 0 0 22px;
+}
+
+.modal-datos dt,
+.modal-subtitulo {
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #b9b5c8;
+}
+
+.modal-datos dd {
+    margin: 0;
+    color: #F2EDE4;
+}
+
+.modal-subtitulo {
+    margin: 0 0 10px;
+}
+
+.modal-reservar {
+    margin-top: 28px;
+    background-color: #E9B949;
+}
+
+.modal-reservar:hover {
+    background-color: #f5c542;
+}
+
+
+/* ---------------- Pantallas pequeñas ---------------- */
+@media (max-width: 700px) {
+    /* Carrusel: póster arriba, info abajo */
+    .carrusel {
+        height: 440px;
+    }
+
+    .slide-contenido {
+        flex-direction: column;
+        justify-content: center;
+        gap: 16px;
+        padding: 24px 20px 44px;  /* Abajo deja lugar a los puntos */
+        text-align: center;
+    }
+
+    .slide-poster {
+        height: 180px;
+    }
+
+    .slide::after {
+        background: rgba(15, 14, 19, 0.7);
+    }
+
+    .slide-titulo {
+        font-size: 34px;
+    }
+
+    .slide-info .horarios {
+        justify-content: center;
+    }
+
+    .btn-detalles {
+        margin-top: 16px;
+    }
+
+    /* Las flechas bajan para no tapar el póster */
+    .carrusel-btn {
+        top: auto;
+        bottom: 6px;
+        transform: none;
+        width: 38px;
+        height: 38px;
+    }
+
+    /* Modal: póster arriba */
+    .modal-contenido {
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .modal-poster {
+        width: 60%;
+        margin: 0 auto;
+    }
+
+    .modal-titulo {
+        font-size: 32px;
+    }
 }
