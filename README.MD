@@ -40,3 +40,11 @@ build\servidor.exe --cambiar-clave admin NEW_PASSWORD
 All routes, what they receive and what they send back are in
 [`docs/rutas-api.md`](docs/rutas-api.md)
 
+## Authors
+
+**Paulina Rojas** — [@paulina-rc](https://github.com/paulina-rc)
+**Isaac Carranza** — [@Carra777](https://github.com/Carra777)
+
+## License
+
+MIT License. See [LICENSE](LICENSE) for details.
