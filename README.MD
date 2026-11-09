@@ -1,13 +1,15 @@
 # Cinema System
 
-A web app for a movie theater. Customers can see the movies and book seats.
+**A web app for a movie theater.** Customers can see the movies and book seats.
 The admin can manage rooms, seats and movies.
 
 ## How to run it
 
 You need `g++` from MSYS2, with `C:\msys64\ucrt64\bin` in your `PATH`.
+
 The libraries (cpp-httplib, nlohmann/json and SQLite) are already in
-`backend/third_party/`. You don't need to install anything else.
+`backend/third_party/`. 
+You don't need to install anything else.
 
 ```text
 .\compilar.bat     builds the server
