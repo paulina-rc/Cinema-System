@@ -1,0 +1,8 @@
+[build]
+  publish = "frontend"
+
+# La pagina principal es la cartelera (igual que en el servidor C++)
+[[redirects]]
+  from = "/"
+  to = "/cartelera.html"
+  status = 302

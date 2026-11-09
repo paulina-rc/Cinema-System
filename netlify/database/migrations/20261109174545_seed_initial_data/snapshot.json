@@ -1,0 +1,1021 @@
+{
+  "id": "1b6b2a79-7d86-4dd6-b13c-6cd293e5595a",
+  "prevIds": [
+    "b751804a-069c-4e04-bdbe-dde34e3e734e"
+  ],
+  "version": "8",
+  "dialect": "postgres",
+  "ddl": [
+    {
+      "isRlsEnabled": false,
+      "name": "administradores",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "butacas",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "clientes",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "funciones",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "peliculas",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "reservaciones",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "reservas_temporales",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "salas",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "sesiones_admin",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "administradores"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "usuario",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "administradores"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sal",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "administradores"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "clave_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "administradores"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sala_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "agrupacion",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "numero",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "1",
+      "generated": null,
+      "identity": null,
+      "name": "habilitada",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "clientes"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nombre",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "clientes"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "telefono",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "clientes"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "funciones"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "pelicula_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "funciones"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "hora",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "funciones"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nombre",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "fecha_inicio",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "fecha_fin",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "numeric",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "precio",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "sala_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "''",
+      "generated": null,
+      "identity": null,
+      "name": "imagen",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "funcion_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "butaca_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "cliente_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "fecha",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "fecha_hora",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "cliente_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "funcion_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "fecha",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "cantidad",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "0",
+      "generated": null,
+      "identity": null,
+      "name": "seleccionadas",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "matriz",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "ids",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "creada",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "reservas_temporales"
+    },
+    {
+      "type": "serial",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "nombre",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "agrupaciones",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "butacas_por_agrupacion",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "type": "integer",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "1",
+      "generated": null,
+      "identity": null,
+      "name": "habilitada",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "token",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sesiones_admin"
+    },
+    {
+      "type": "text",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "usuario",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sesiones_admin"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "vence",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sesiones_admin"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "sala_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "idx_butacas_sala",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "fecha_inicio",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "fecha_fin",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "idx_peliculas_fechas",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "funcion_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        },
+        {
+          "value": "fecha",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "idx_reservaciones_funcion",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "sala_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "salas",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "butacas_sala_id_salas_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "pelicula_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "peliculas",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "funciones_pelicula_id_peliculas_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "funciones"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "sala_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "salas",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "peliculas_sala_id_salas_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "funcion_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "funciones",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "reservaciones_funcion_id_funciones_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "butaca_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "butacas",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "reservaciones_butaca_id_butacas_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "cliente_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "clientes",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "NO ACTION",
+      "name": "reservaciones_cliente_id_clientes_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "administradores_pkey",
+      "schema": "public",
+      "table": "administradores",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "butacas_pkey",
+      "schema": "public",
+      "table": "butacas",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "clientes_pkey",
+      "schema": "public",
+      "table": "clientes",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "funciones_pkey",
+      "schema": "public",
+      "table": "funciones",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "peliculas_pkey",
+      "schema": "public",
+      "table": "peliculas",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "reservaciones_pkey",
+      "schema": "public",
+      "table": "reservaciones",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "token"
+      ],
+      "nameExplicit": false,
+      "name": "reservas_temporales_pkey",
+      "schema": "public",
+      "table": "reservas_temporales",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "salas_pkey",
+      "schema": "public",
+      "table": "salas",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "token"
+      ],
+      "nameExplicit": false,
+      "name": "sesiones_admin_pkey",
+      "schema": "public",
+      "table": "sesiones_admin",
+      "entityType": "pks"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "sala_id",
+        "agrupacion",
+        "numero"
+      ],
+      "nullsNotDistinct": false,
+      "name": "butacas_posicion_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "pelicula_id",
+        "hora"
+      ],
+      "nullsNotDistinct": false,
+      "name": "funciones_pelicula_hora_unique",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "funciones"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        "funcion_id",
+        "butaca_id",
+        "fecha"
+      ],
+      "nullsNotDistinct": false,
+      "name": "reservaciones_unica",
+      "entityType": "uniques",
+      "schema": "public",
+      "table": "reservaciones"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "usuario"
+      ],
+      "nullsNotDistinct": false,
+      "name": "administradores_usuario_key",
+      "schema": "public",
+      "table": "administradores",
+      "entityType": "uniques"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "nombre"
+      ],
+      "nullsNotDistinct": false,
+      "name": "salas_nombre_key",
+      "schema": "public",
+      "table": "salas",
+      "entityType": "uniques"
+    },
+    {
+      "value": "\"habilitada\" IN (0, 1)",
+      "name": "butacas_habilitada_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "butacas"
+    },
+    {
+      "value": "\"precio\" > 0",
+      "name": "peliculas_precio_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "value": "\"fecha_fin\" >= \"fecha_inicio\"",
+      "name": "peliculas_fechas_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "peliculas"
+    },
+    {
+      "value": "\"agrupaciones\" > 0",
+      "name": "salas_agrupaciones_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "value": "\"butacas_por_agrupacion\" > 0",
+      "name": "salas_butacas_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "salas"
+    },
+    {
+      "value": "\"habilitada\" IN (0, 1)",
+      "name": "salas_habilitada_check",
+      "entityType": "checks",
+      "schema": "public",
+      "table": "salas"
+    }
+  ],
+  "renames": []
+}
