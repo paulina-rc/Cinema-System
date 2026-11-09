@@ -21,9 +21,8 @@ Always run these from the main project folder. The server looks for
 
 > [!NOTE]
 > Admin user
-
-The first time the server starts, if there are no admins yet, it creates
-this user. It also prints it in the server window.
+> The first time the server starts, if there are no admins yet, it creates
+> this user. It also prints it in the server window.
 
 | User | First password |
 |---|---|
