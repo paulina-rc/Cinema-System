@@ -19,7 +19,8 @@ To stop the server, press `Ctrl + C` in the server window.
 Always run these from the main project folder. The server looks for
 `frontend/` and `database/` starting from there.
 
-### Admin user
+> [!NOTE]
+> Admin user
 
 The first time the server starts, if there are no admins yet, it creates
 this user. It also prints it in the server window.
