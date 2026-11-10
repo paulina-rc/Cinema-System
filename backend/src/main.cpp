@@ -1,14 +1,6 @@
-// =============================================================================
-//  main.cpp - Servidor HTTP del Sistema Cine
-//
-//  Hace cuatro cosas en orden (igual que el demo):
-//    1. Abre la base de datos database/cine.db
-//    2. Crea el servidor y sirve las paginas de frontend/
-//    3. Registra las rutas de la API (ver docs/API.md)
-//    4. Se queda escuchando en http://localhost:8080
-//
-//  Se ejecuta desde la carpeta raiz del proyecto (usar iniciar.bat).
-// =============================================================================
+// main.cpp
+// servidor del sistema: abre database/cine.db, sirve las paginas de frontend/
+// y registra las rutas de la api. se corre desde la raiz con iniciar.bat
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -27,9 +19,6 @@
 
 using json = nlohmann::json;
 
-// -----------------------------------------------------------------------------
-//  Ayudantes para responder (mismo formato que el demo)
-// -----------------------------------------------------------------------------
 template <typename T>
 void responderJson(httplib::Response& res, const T& datos, int estado = 200) {
     res.status = estado;
@@ -40,21 +29,17 @@ void responderError(httplib::Response& res, int estado, const std::string& mensa
     responderJson(res, json{{"error", mensaje}}, estado);
 }
 
-// -----------------------------------------------------------------------------
-//  Validaciones (el servidor NUNCA confia en lo que manda el navegador)
-// -----------------------------------------------------------------------------
-const int MAX_AGRUPACIONES = 10;   // A..J: cada agrupacion (bloque) se nombra con una letra
-const int MAX_BUTACAS      = 60;   // butacas por agrupacion
-const int MAX_POR_RESERVA  = 10;   // butacas que un cliente puede reservar de una vez
+// todo lo que manda el navegador se vuelve a revisar aca, no se confia en el frontend
+const int MAX_AGRUPACIONES = 10;   // de la A a la J, cada agrupacion lleva una letra
+const int MAX_BUTACAS      = 60;   // por agrupacion
+const int MAX_POR_RESERVA  = 10;   // por cliente en una sola reserva
 
-// Lee el JSON del cuerpo. Si no es valido o no es un objeto, devuelve false.
 bool leerCuerpo(const httplib::Request& req, json& j) {
-    j = json::parse(req.body, nullptr, false);   // no lanza excepcion
+    j = json::parse(req.body, nullptr, false);   // el false es para que no lance excepcion si el json viene mal
     return !j.is_discarded() && j.is_object();
 }
 
-// Revisa los datos de una sala nueva. Devuelve "" si todo esta bien,
-// o el mensaje de error para el usuario.
+// las funciones validar* devuelven "" si todo esta bien o el mensaje de error para el usuario
 std::string validarSala(const json& j, std::string& nombre, int& agrupaciones, int& por_agrupacion) {
     if (!j.contains("nombre") || !j["nombre"].is_string())
         return "Falta el nombre de la sala";
@@ -67,7 +52,6 @@ std::string validarSala(const json& j, std::string& nombre, int& agrupaciones, i
     agrupaciones   = j["agrupaciones"].get<int>();
     por_agrupacion = j["butacas_por_agrupacion"].get<int>();
 
-    // Quitar espacios al inicio y al final del nombre
     nombre.erase(0, nombre.find_first_not_of(" \t"));
     nombre.erase(nombre.find_last_not_of(" \t") + 1);
 
@@ -80,7 +64,6 @@ std::string validarSala(const json& j, std::string& nombre, int& agrupaciones, i
     return "";
 }
 
-// Para las rutas .../habilitada: el cuerpo debe ser {"habilitada": 0} o {"habilitada": 1}
 std::string validarHabilitada(const json& j, int& habilitada) {
     if (!j.contains("habilitada") || !j["habilitada"].is_number_integer())
         return "Falta el campo habilitada (0 o 1)";
@@ -90,9 +73,7 @@ std::string validarHabilitada(const json& j, int& habilitada) {
     return "";
 }
 
-// ---- Fechas y horas -------------------------------------------------------
-// Fecha valida en formato AAAA-MM-DD (revisa tambien que el dia exista:
-// no acepta 2026-02-30).
+// ademas del formato AAAA-MM-DD revisa que el dia exista, por ejemplo no acepta 2026-02-30
 bool fechaValida(const std::string& f) {
     static const std::regex formato(R"(^\d{4}-\d{2}-\d{2}$)");
     if (!std::regex_match(f, formato)) return false;
@@ -108,14 +89,12 @@ bool fechaValida(const std::string& f) {
     return dia <= dias_mes[mes - 1];
 }
 
-// Hora valida en formato HH:MM de 24 horas (00:00 a 23:59).
 bool horaValida(const std::string& h) {
     static const std::regex formato(R"(^([01]\d|2[0-3]):[0-5]\d$)");
     return std::regex_match(h, formato);
 }
 
-// Revisa los datos de una pelicula nueva. Devuelve "" si todo esta bien.
-// La sala se valida aparte en la ruta, porque hay que consultar la BD.
+// la sala se revisa en la ruta porque hay que consultar la base
 std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>& horarios) {
     if (!j.contains("nombre") || !j["nombre"].is_string())
         return "Falta el nombre de la pelicula";
@@ -144,7 +123,7 @@ std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>
         return "La fecha de inicio no es valida (use AAAA-MM-DD)";
     if (!fechaValida(p.fecha_fin))
         return "La fecha de finalizacion no es valida (use AAAA-MM-DD)";
-    // En formato AAAA-MM-DD el orden de texto es el orden de las fechas.
+    // como van en AAAA-MM-DD se pueden comparar como texto
     if (p.fecha_fin < p.fecha_inicio)
         return "La fecha de finalizacion no puede ser antes de la fecha de inicio";
 
@@ -154,7 +133,7 @@ std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>
     if (j["horarios"].empty())
         return "Debe agregar al menos un horario";
 
-    std::set<std::string> vistos;   // para detectar horarios repetidos
+    std::set<std::string> vistos;   // para detectar repetidos
     for (const auto& h : j["horarios"]) {
         if (!h.is_string() || !horaValida(h.get<std::string>()))
             return "Hay un horario que no es valido (use HH:MM, por ejemplo 19:30)";
@@ -166,27 +145,23 @@ std::string validarPelicula(const json& j, Pelicula& p, std::vector<std::string>
     return "";
 }
 
-// ---- Poster de la pelicula -------------------------------------------------
-// El navegador manda la imagen dentro del JSON como texto "data URL":
-//     "data:image/jpeg;base64,/9j/4AAQSk..."
-// Aqui se convierte de base64 a bytes y se guarda como archivo en
-// frontend/img/peliculas/. En la base de datos solo queda la RUTA.
+// el navegador manda el poster como data url ("data:image/jpeg;base64,...")
+// aca se pasa a bytes y se guarda como archivo, en la base solo queda la ruta
 const std::string CARPETA_POSTERS = "img/peliculas/";        // relativa a frontend/
-const size_t      MAX_IMAGEN      = 3 * 1024 * 1024;         // 3 MB en base64
+const size_t      MAX_IMAGEN      = 3 * 1024 * 1024;         // 3 mb contando el base64
 
-// Base64 -> bytes. Devuelve false si el texto trae caracteres invalidos.
 bool decodificarBase64(const std::string& texto, std::string& bytes) {
     static const std::string tabla =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     int valor = 0, bits = 0;
     bytes.clear();
     for (char c : texto) {
-        if (c == '=') break;                      // relleno del final
+        if (c == '=') break;                      // el = es relleno del final
         size_t pos = tabla.find(c);
         if (pos == std::string::npos) return false;
         valor = (valor << 6) | static_cast<int>(pos);   // cada caracter son 6 bits
         bits += 6;
-        if (bits >= 8) {                          // ya se junto un byte completo
+        if (bits >= 8) {                          // ya hay un byte completo
             bits -= 8;
             bytes.push_back(static_cast<char>((valor >> bits) & 0xFF));
         }
@@ -194,10 +169,8 @@ bool decodificarBase64(const std::string& texto, std::string& bytes) {
     return true;
 }
 
-// Guarda el poster y deja en `ruta` lo que se guarda en la BD.
-// Devuelve "" si todo salio bien, o el mensaje de error.
 std::string guardarPoster(const std::string& data_url, std::string& ruta) {
-    // Solo se aceptan JPEG y PNG (el navegador siempre manda JPEG)
+    // el navegador siempre manda jpeg, el png es por si acaso
     std::string extension;
     std::string prefijo;
     if (data_url.rfind("data:image/jpeg;base64,", 0) == 0) { prefijo = "data:image/jpeg;base64,"; extension = ".jpg"; }
@@ -211,7 +184,7 @@ std::string guardarPoster(const std::string& data_url, std::string& ruta) {
     if (!decodificarBase64(data_url.substr(prefijo.size()), bytes) || bytes.empty())
         return "La imagen no es valida";
 
-    // Nombre unico con la hora actual en milisegundos
+    // el nombre lleva los milisegundos para que no se repita
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
                   std::chrono::system_clock::now().time_since_epoch()).count();
     ruta = CARPETA_POSTERS + "pelicula-" + std::to_string(ms) + extension;
@@ -224,16 +197,13 @@ std::string guardarPoster(const std::string& data_url, std::string& ruta) {
     return "";
 }
 
-// ---- Reservacion -----------------------------------------------------------
-// Quita espacios al inicio y al final.
 std::string recortar(std::string t) {
     t.erase(0, t.find_first_not_of(" \t"));
     t.erase(t.find_last_not_of(" \t") + 1);
     return t;
 }
 
-// Paso 1: nombre y telefono del cliente. El telefono se guarda solo con
-// digitos (se aceptan "8888 8888" o "8888-8888" y se guardan como "88888888").
+// el telefono se guarda solo con numeros, "8888-8888" queda como "88888888"
 std::string validarCliente(const json& j, std::string& nombre, std::string& telefono) {
     if (!j.contains("nombre") || !j["nombre"].is_string())
         return "Falta el nombre";
@@ -254,8 +224,6 @@ std::string validarCliente(const json& j, std::string& nombre, std::string& tele
     return "";
 }
 
-// Una funcion solo se puede reservar si existe, su pelicula esta en
-// exhibicion HOY y su sala esta habilitada. Devuelve "" si se puede.
 std::string validarFuncionReservable(const std::optional<InfoFuncion>& f) {
     if (!f)                     return "La funcion no existe";
     if (f->sala_habilitada == 0) return "La sala de esta funcion esta inhabilitada";
@@ -263,7 +231,6 @@ std::string validarFuncionReservable(const std::optional<InfoFuncion>& f) {
     return "";
 }
 
-// Cuenta las posiciones con estado DISPONIBLE (0) en la matriz.
 int contarDisponibles(const std::vector<std::vector<int>>& matriz) {
     int total = 0;
     for (const auto& fila : matriz)
@@ -272,29 +239,26 @@ int contarDisponibles(const std::vector<std::vector<int>>& matriz) {
     return total;
 }
 
-// ---- Login del administrador -----------------------------------------------
-// Usuario que se crea solo la primera vez (si la tabla administradores esta vacia).
-// Cambie la contrasena con:  build\servidor.exe --cambiar-clave admin NUEVA_CLAVE
+// este admin se crea solo si la tabla esta vacia, la clave se cambia con --cambiar-clave
 const std::string ADMIN_INICIAL = "admin";
 const std::string CLAVE_INICIAL = "imperium2026";
 const size_t      MIN_CLAVE     = 8;
 
-// Saca el token del encabezado "Authorization: Bearer <token>".
+// el token viene en el encabezado Authorization como "Bearer <token>"
 std::string tokenDe(const httplib::Request& req) {
     const std::string prefijo = "Bearer ";
     std::string h = req.get_header_value("Authorization");
     return h.rfind(prefijo, 0) == 0 ? h.substr(prefijo.size()) : "";
 }
 
-// Guarda (o cambia) la contrasena de un administrador con una sal nueva.
+// cada vez que se guarda una clave se genera una sal nueva
 void guardarClave(Database& db, const std::string& usuario, const std::string& clave) {
     std::string sal = textoAleatorio(16);
     db.guardarAdmin(usuario, sal, hashClave(sal, clave));
 }
 
 int main(int argc, char* argv[]) {
-    // Modo especial: cambiar la contrasena sin arrancar el servidor
-    //   servidor.exe --cambiar-clave <usuario> <clave nueva>
+    // modo para cambiar la clave sin levantar el servidor
     if (argc > 1 && std::string(argv[1]) == "--cambiar-clave") {
         if (argc != 4) {
             std::cerr << "Uso: servidor.exe --cambiar-clave <usuario> <clave nueva>\n";
@@ -317,11 +281,9 @@ int main(int argc, char* argv[]) {
 
     int puerto = (argc > 1) ? std::stoi(argv[1]) : 8080;
 
-    // ---------------------------------------------------------------- 1. BD
     try {
         static Database db("database/cine.db");
 
-        // Primer arranque: si no hay ningun administrador se crea el inicial.
         if (db.contarAdmins() == 0) {
             guardarClave(db, ADMIN_INICIAL, CLAVE_INICIAL);
             std::cout << "Se creo el administrador inicial -> usuario: " << ADMIN_INICIAL
@@ -330,11 +292,10 @@ int main(int argc, char* argv[]) {
                       << ADMIN_INICIAL << " NUEVA_CLAVE\n";
         }
 
-        // Sesiones abiertas del panel admin (viven en memoria)
+        // las sesiones viven en memoria, se pierden al reiniciar el servidor
         static SesionesAdmin sesiones;
 
-        // Revisa que la peticion traiga un token de sesion valido.
-        // Si no, responde 401 y devuelve false (la ruta debe terminar ahi).
+        // si no hay sesion responde 401 y la ruta tiene que salir con return
         auto esAdmin = [&](const httplib::Request& req, httplib::Response& res) {
             if (sesiones.usuario(tokenDe(req)).empty()) {
                 responderError(res, 401, "Debe iniciar sesion como administrador");
@@ -343,7 +304,6 @@ int main(int argc, char* argv[]) {
             return true;
         };
 
-        // ------------------------------------------------------- 2. Servidor
         httplib::Server svr;
 
         if (!svr.set_mount_point("/", "frontend")) {
@@ -352,21 +312,15 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        // ------------------------------------------------------- 3. Rutas
-        // Raiz: ya no existe index.html, la pagina principal es la cartelera
+        // no hay index.html, la pagina principal es la cartelera
         svr.Get("/", [](const httplib::Request&, httplib::Response& res) {
             res.set_redirect("/cartelera.html");
         });
 
-        // Prueba
         svr.Get("/api/ping", [](const httplib::Request&, httplib::Response& res) {
             responderJson(res, json{{"mensaje", "pong"}});
         });
 
-        // =====================================================================
-        //  LOGIN DEL ADMINISTRADOR
-        // =====================================================================
-        // Entrar (POST /api/login) {"usuario": "...", "clave": "..."}
         svr.Post("/api/login", [&](const httplib::Request& req, httplib::Response& res) {
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -380,8 +334,8 @@ int main(int argc, char* argv[]) {
             auto admin = db.obtenerAdmin(usuario);
             bool correcto = admin && igualesSeguro(hashClave(admin->sal, clave), admin->clave_hash);
             if (!correcto) {
-                // Pequena espera para que adivinar contrasenas sea lento.
-                // El mensaje no dice si fallo el usuario o la clave.
+                // la espera es para que probar claves sea lento, y el mensaje
+                // no dice si fallo el usuario o la clave a proposito
                 std::this_thread::sleep_for(std::chrono::milliseconds(600));
                 return responderError(res, 401, "Usuario o contrasena incorrectos");
             }
@@ -390,27 +344,24 @@ int main(int argc, char* argv[]) {
                                     {"usuario", admin->usuario}});
         });
 
-        // Revisar si la sesion sigue abierta (GET /api/sesion)
         svr.Get("/api/sesion", [&](const httplib::Request& req, httplib::Response& res) {
             std::string usuario = sesiones.usuario(tokenDe(req));
             if (usuario.empty()) return responderError(res, 401, "Sesion vencida o inexistente");
             responderJson(res, json{{"ok", true}, {"usuario", usuario}});
         });
 
-        // Salir (POST /api/logout)
         svr.Post("/api/logout", [&](const httplib::Request& req, httplib::Response& res) {
             sesiones.cerrar(tokenDe(req));
             responderJson(res, json{{"ok", true}});
         });
 
-        // Salas: lista todas (GET /api/salas)
         svr.Get("/api/salas", [&](const httplib::Request&, httplib::Response& res) {
             responderJson(res, db.listarSalas());
         });
 
-        // Salas: crear (POST /api/salas) -> genera tambien las butacas
+        // crear la sala genera tambien todas sus butacas
         svr.Post("/api/salas", [&](const httplib::Request& req, httplib::Response& res) {
-            if (!esAdmin(req, res)) return;   // solo el administrador
+            if (!esAdmin(req, res)) return;
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
 
@@ -425,9 +376,8 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"ok", true}, {"id", *id}}, 201);
         });
 
-        // Salas: habilitar / inhabilitar (PUT /api/salas/{id}/habilitada)
         svr.Put(R"(/api/salas/(\d+)/habilitada)", [&](const httplib::Request& req, httplib::Response& res) {
-            if (!esAdmin(req, res)) return;   // solo el administrador
+            if (!esAdmin(req, res)) return;
             int id = std::stoi(req.matches[1]);
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -441,7 +391,6 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"ok", true}});
         });
 
-        // Butacas de una sala (GET /api/salas/{id}/butacas)
         svr.Get(R"(/api/salas/(\d+)/butacas)", [&](const httplib::Request& req, httplib::Response& res) {
             int id = std::stoi(req.matches[1]);
             auto sala = db.obtenerSala(id);
@@ -454,9 +403,9 @@ int main(int argc, char* argv[]) {
             });
         });
 
-        // Butaca: marcar danada / reparada (PUT /api/butacas/{id}/habilitada)
+        // habilitada = 0 es que la butaca esta danada
         svr.Put(R"(/api/butacas/(\d+)/habilitada)", [&](const httplib::Request& req, httplib::Response& res) {
-            if (!esAdmin(req, res)) return;   // solo el administrador
+            if (!esAdmin(req, res)) return;
             int id = std::stoi(req.matches[1]);
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -470,19 +419,18 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"ok", true}});
         });
 
-        // Peliculas: todas, para el administrador (GET /api/peliculas)
+        // todas las peliculas, para el panel admin
         svr.Get("/api/peliculas", [&](const httplib::Request&, httplib::Response& res) {
             responderJson(res, db.listarPeliculas(false));
         });
 
-        // Cartelera: solo las que se exhiben hoy (GET /api/cartelera)
+        // solo las que estan en exhibicion hoy
         svr.Get("/api/cartelera", [&](const httplib::Request&, httplib::Response& res) {
             responderJson(res, db.listarPeliculas(true));
         });
 
-        // Peliculas: registrar (POST /api/peliculas)
         svr.Post("/api/peliculas", [&](const httplib::Request& req, httplib::Response& res) {
-            if (!esAdmin(req, res)) return;   // solo el administrador
+            if (!esAdmin(req, res)) return;
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
 
@@ -491,12 +439,11 @@ int main(int argc, char* argv[]) {
             std::string error = validarPelicula(j, p, horarios);
             if (!error.empty()) return responderError(res, 400, error);
 
-            // La sala tiene que existir y estar habilitada.
             auto sala = db.obtenerSala(p.sala_id);
             if (!sala)                 return responderError(res, 400, "La sala seleccionada no existe");
             if (sala->habilitada == 0) return responderError(res, 400, "La sala seleccionada esta inhabilitada");
 
-            // Poster (opcional): se guarda como archivo antes de insertar
+            // el poster se guarda antes del insert porque la ruta va en la fila
             if (j.contains("imagen") && j["imagen"].is_string() && !j["imagen"].get<std::string>().empty()) {
                 std::string error_imagen = guardarPoster(j["imagen"].get<std::string>(), p.imagen);
                 if (!error_imagen.empty()) return responderError(res, 400, error_imagen);
@@ -506,7 +453,7 @@ int main(int argc, char* argv[]) {
             try {
                 id = db.crearPelicula(p, horarios);
             } catch (...) {
-                // Si la BD fallo, no dejar el archivo huerfano
+                // si fallo la base se borra la imagen para no dejar archivos sueltos
                 if (!p.imagen.empty()) {
                     std::error_code ec;
                     std::filesystem::remove("frontend/" + p.imagen, ec);
@@ -516,13 +463,10 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"ok", true}, {"id", id}, {"imagen", p.imagen}}, 201);
         });
 
-        // =====================================================================
-        //  RESERVACION (Modulos 3 y 4)
-        // =====================================================================
-        // Aqui viven las matrices de las reservaciones que estan en proceso.
+        // las matrices de las reservas que van a medias viven aca, no en la base
         static ReservasEnMemoria reservas;
 
-        // Paso 1: registrar al cliente (POST /api/clientes)
+        // paso 1, registrar al cliente
         svr.Post("/api/clientes", [&](const httplib::Request& req, httplib::Response& res) {
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -535,8 +479,7 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"ok", true}, {"cliente_id", id}}, 201);
         });
 
-        // Paso 3: cuantas butacas quedan libres hoy en una funcion
-        // (GET /api/funciones/{id}/disponibles)
+        // paso 3, cuantas butacas quedan libres hoy en una funcion
         svr.Get(R"(/api/funciones/(\d+)/disponibles)", [&](const httplib::Request& req, httplib::Response& res) {
             auto f = db.obtenerFuncion(std::stoi(req.matches[1]));
             std::string error = validarFuncionReservable(f);
@@ -547,8 +490,7 @@ int main(int argc, char* argv[]) {
             responderJson(res, json{{"disponibles", contarDisponibles(matriz)}});
         });
 
-        // Pasos 3 y 4: iniciar la reservacion temporal (POST /api/reserva/iniciar)
-        // Consulta SQLite, carga la matriz en memoria y devuelve un token.
+        // pasos 3 y 4, se arma la matriz desde la base y se devuelve el token
         svr.Post("/api/reserva/iniciar", [&](const httplib::Request& req, httplib::Response& res) {
             json j;
             if (!leerCuerpo(req, j)) return responderError(res, 400, "JSON invalido");
@@ -572,7 +514,6 @@ int main(int argc, char* argv[]) {
                 return responderError(res, 400, "Puede reservar de 1 a " +
                                       std::to_string(MAX_POR_RESERVA) + " butacas");
 
-            // Cargar la matriz con lo que YA esta guardado en SQLite.
             ReservaTemporal r;
             r.cliente_id = cliente_id;
             r.funcion    = *f;
@@ -596,8 +537,7 @@ int main(int argc, char* argv[]) {
             responderJson(res, respuesta, 201);
         });
 
-        // Paso 4: marcar o desmarcar una butaca (POST /api/reserva/{token}/marcar)
-        // Solo cambia la matriz en memoria: 0 -> 3 o 3 -> 0. No toca SQLite.
+        // paso 4, marcar o desmarcar una butaca, solo cambia la matriz en memoria
         svr.Post(R"(/api/reserva/(\w+)/marcar)", [&](const httplib::Request& req, httplib::Response& res) {
             std::string token = req.matches[1];
             json j;
@@ -614,7 +554,6 @@ int main(int argc, char* argv[]) {
             json respuesta;
 
             bool existe = reservas.usar(token, [&](ReservaTemporal& r) {
-                // La posicion tiene que estar dentro de la matriz.
                 if (a < 0 || a >= (int)r.matriz.size() || n < 0 || n >= (int)r.matriz[a].size()) {
                     codigo = 400; error = "Esa butaca no existe en la sala"; return;
                 }
@@ -630,9 +569,9 @@ int main(int argc, char* argv[]) {
                                 " butacas. Desmarque una para cambiarla";
                         return;
                     }
-                    estado = SELECCIONADA;          // nueva seleccion del cliente
+                    estado = SELECCIONADA;
                     r.seleccionadas++;
-                } else {                            // estaba en 3: se desmarca
+                } else {                            // estaba seleccionada, se desmarca
                     estado = DISPONIBLE;
                     r.seleccionadas--;
                 }
@@ -649,28 +588,26 @@ int main(int argc, char* argv[]) {
             responderJson(res, respuesta);
         });
 
-        // Paso 5: confirmar y simular el pago (POST /api/reserva/{token}/confirmar)
+        // paso 5, confirmar
         svr.Post(R"(/api/reserva/(\w+)/confirmar)", [&](const httplib::Request& req, httplib::Response& res) {
             std::string token = req.matches[1];
             auto r = reservas.copia(token);
             if (!r) return responderError(res, 404, "La reservacion expiro. Empiece de nuevo");
 
-            // 1. Tienen que estar elegidas exactamente las butacas pedidas.
             if (r->seleccionadas != r->cantidad)
                 return responderError(res, 400, "Debe elegir " + std::to_string(r->cantidad) + " butacas");
 
-            // 2. Recorrer la matriz y tomar SOLO las posiciones con estado 3.
-            //    Las de estado 1 ya estaban en SQLite y no se vuelven a insertar.
+            // solo van las de estado 3, las de estado 1 ya estaban en la base
             std::vector<int> ids_nuevos;
             for (const auto& [a, n] : r->posicionesNuevas()) ids_nuevos.push_back(r->ids[a][n]);
 
-            // 3. Guardar en SQLite (revisa de nuevo la disponibilidad adentro).
+            // confirmarReserva vuelve a revisar adentro por si alguien se adelanto
             std::vector<int> conflictos = db.confirmarReserva(
                 r->funcion.funcion_id, r->cliente_id, r->fecha, ids_nuevos);
 
             if (!conflictos.empty()) {
-                // Otro cliente gano alguna butaca: se recarga la matriz desde
-                // SQLite y se conservan las selecciones que siguen libres.
+                // alguien gano una butaca, se recarga la matriz desde la base y
+                // se dejan marcadas las que siguen libres
                 json respuesta;
                 reservas.usar(token, [&](ReservaTemporal& t) {
                     std::vector<std::vector<int>> nueva, ids;
@@ -694,7 +631,6 @@ int main(int argc, char* argv[]) {
                 return responderJson(res, respuesta, 409);
             }
 
-            // 4. Listo: se borra la matriz temporal de memoria.
             reservas.borrar(token);
             responderJson(res, json{
                 {"ok", true},
@@ -706,15 +642,13 @@ int main(int argc, char* argv[]) {
             }, 201);
         });
 
-        // Cancelar o cambiar la cantidad (POST /api/reserva/{token}/cancelar)
-        // Borra la matriz temporal sin guardar nada.
+        // se usa al cancelar o al cambiar la cantidad, no guarda nada
         svr.Post(R"(/api/reserva/(\w+)/cancelar)", [&](const httplib::Request& req, httplib::Response& res) {
             reservas.borrar(req.matches[1]);
             responderJson(res, json{{"ok", true}});
         });
 
-        // Si una ruta lanza una excepcion (por ejemplo un error de SQLite),
-        // se responde 500 en vez de cerrar el servidor.
+        // si una ruta lanza una excepcion se responde 500 en vez de que se caiga el servidor
         svr.set_exception_handler([](const httplib::Request&, httplib::Response& res,
                                      std::exception_ptr ep) {
             std::string msg = "Error interno";
@@ -725,12 +659,10 @@ int main(int argc, char* argv[]) {
             responderError(res, 500, msg);
         });
 
-        // Imprime en la consola cada peticion recibida
         svr.set_logger([](const httplib::Request& req, const httplib::Response& res) {
             std::cout << req.method << " " << req.path << " -> " << res.status << "\n";
         });
 
-        // ------------------------------------------------------- 4. Escuchar
         std::cout << "Servidor en http://localhost:" << puerto << "\n";
         std::cout << "Ctrl + C para detenerlo.\n";
         if (!svr.listen("127.0.0.1", puerto)) {
