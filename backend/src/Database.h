@@ -1,11 +1,6 @@
-// =============================================================================
-//  Database.h
-//  -----------------------------------------------------------------------------
-//  CAPA DE ACCESO A DATOS (igual que en el demo del profe).
-//
-//  Esta clase es la UNICA parte del programa que "habla" con SQLite.
-//  Las rutas HTTP de main.cpp no escriben SQL: solo llaman a sus metodos.
-// =============================================================================
+// Database.h
+// la unica clase que habla con sqlite, las rutas de main.cpp no escriben
+// sql, solo llaman estos metodos
 #pragma once
 
 #include <mutex>
@@ -15,102 +10,77 @@
 
 #include "modelos.h"
 
-// Declaracion adelantada: basta con saber que existe el tipo sqlite3.
+// con esto alcanza para no incluir sqlite3.h en el header
 struct sqlite3;
 
 class Database {
 public:
-    // Abre el archivo de base de datos (debe existir: database/cine.db).
+    // el archivo tiene que existir, no lo crea
     explicit Database(const std::string& ruta_archivo);
-
-    // Cierra la conexion automaticamente al destruirse el objeto (RAII).
     ~Database();
 
     Database(const Database&)            = delete;
     Database& operator=(const Database&) = delete;
 
-    // ---------------- Salas ----------------
-    // R: lista todas las salas, incluidas las inhabilitadas.
+    // trae tambien las inhabilitadas
     std::vector<Sala> listarSalas();
 
-    // R: busca una sala por id. Si no existe devuelve std::nullopt.
     std::optional<Sala> obtenerSala(int id);
 
-    // C: crea la sala Y genera todas sus butacas (una por posicion de la
-    //    matriz agrupaciones x butacas_por_agrupacion).
-    //    Devuelve el id nuevo, o std::nullopt si ya existe una sala con ese nombre.
+    // crea tambien todas las butacas, nullopt si ya hay una sala con ese nombre
     std::optional<int> crearSala(const std::string& nombre, int agrupaciones,
                                  int butacas_por_agrupacion);
 
-    // U: habilita (1) o inhabilita (0) una sala sin borrarla.
-    //    Devuelve false si la sala no existe.
+    // false si no existe
     bool cambiarHabilitadaSala(int id, int habilitada);
 
-    // ---------------- Butacas ----------------
-    // R: todas las butacas de una sala, ordenadas como la matriz.
     std::vector<Butaca> listarButacas(int sala_id);
 
-    // U: marca una butaca como danada (0) o la repara (1).
-    //    Devuelve false si la butaca no existe.
+    // false si no existe
     bool cambiarHabilitadaButaca(int id, int habilitada);
 
-    // ---------------- Peliculas ----------------
-    // R: lista las peliculas con su sala y sus horarios.
-    //    solo_cartelera = true -> solo las que se exhiben HOY y cuya sala
-    //    esta habilitada (es lo que ve el cliente en el paso 2).
+    // con solo_cartelera trae solo las que se exhiben hoy en una sala habilitada
     std::vector<Pelicula> listarPeliculas(bool solo_cartelera = false);
 
-    // C: inserta la pelicula y una funcion por cada horario.
-    //    Devuelve el id de la pelicula nueva.
+    // inserta la pelicula y una funcion por horario, devuelve el id nuevo
     int crearPelicula(const Pelicula& p, const std::vector<std::string>& horarios);
 
-    // ---------------- Administradores ----------------
-    // R: busca un administrador por su nombre de usuario.
     std::optional<Administrador> obtenerAdmin(const std::string& usuario);
 
-    // R: cuantos administradores hay (si es 0, main.cpp crea el inicial).
     int contarAdmins();
 
-    // C/U: crea el administrador o le cambia la contrasena si ya existe.
+    // si el usuario ya existe solo le cambia la clave
     void guardarAdmin(const std::string& usuario, const std::string& sal,
                       const std::string& clave_hash);
 
-    // ---------------- Clientes ----------------
-    // C: registra al cliente del paso 1 y devuelve su id.
+    // devuelve el id nuevo
     int crearCliente(const std::string& nombre, const std::string& telefono);
 
-    // R: true si existe un cliente con ese id.
     bool existeCliente(int id);
 
-    // ---------------- Reservaciones ----------------
-    // Fecha de hoy segun SQLite ('AAAA-MM-DD', hora local). Las reservas se
-    // guardan con esta fecha porque la misma funcion se repite cada dia.
+    // la fecha la da sqlite para que sea la misma que usa en las consultas,
+    // las reservas se guardan por dia porque la misma funcion se repite todos los dias
     std::string fechaHoy();
 
-    // R: pelicula, sala y configuracion de una funcion. nullopt si no existe.
     std::optional<InfoFuncion> obtenerFuncion(int funcion_id);
 
-    // R: arma la matriz de la sala para una funcion y un dia:
-    //    matriz[agrupacion][numero] = 0 disponible, 1 ocupada, 2 danada.
-    //    En ids deja el id de la butaca de cada posicion (para insertar luego).
+    // llena matriz con 0 disponible, 1 ocupada, 2 danada, y en ids deja el id
+    // de la butaca de cada posicion para poder insertar despues
     void cargarMatriz(const InfoFuncion& f, const std::string& fecha,
                       std::vector<std::vector<int>>& matriz,
                       std::vector<std::vector<int>>& ids);
 
-    // C: guarda las butacas nuevas en UNA transaccion.
-    //    Antes de insertar vuelve a revisar en SQLite que cada butaca siga
-    //    habilitada y libre. Si alguna ya no lo esta, no guarda NADA
-    //    (ROLLBACK) y devuelve los ids de las butacas en conflicto.
-    //    Si todo sale bien devuelve un vector vacio.
+    // vuelve a revisar que las butacas sigan libres antes de guardar, si alguna
+    // ya no lo esta no guarda ninguna y devuelve los ids con problema,
+    // vector vacio es que todo salio bien
     std::vector<int> confirmarReserva(int funcion_id, int cliente_id,
                                       const std::string& fecha,
                                       const std::vector<int>& butaca_ids);
 
 private:
-    sqlite3*   db_ = nullptr;   // "Conexion" a la base de datos
-    std::mutex mutex_;          // Evita que dos peticiones (hilos) usen la
-                                // conexion al mismo tiempo.
+    sqlite3*   db_ = nullptr;
+    std::mutex mutex_;          // cada peticion corre en su hilo y la conexion es una sola
 
-    // Ejecuta SQL que no devuelve filas (PRAGMA, CREATE TABLE, etc.)
+    // para sql que no devuelve filas
     void ejecutar(const std::string& sql);
 };
