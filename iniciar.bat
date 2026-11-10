@@ -1,8 +1,7 @@
 @echo off
-REM ===========================================================================
-REM  iniciar.bat - Arranca el servidor y abre el navegador.
-REM  Se ejecuta desde la carpeta raiz para que encuentre frontend\ y database\
-REM ===========================================================================
+REM iniciar.bat
+REM arranca el servidor y abre el navegador, el cd es para que el servidor
+REM encuentre frontend\ y database\ aunque se abra desde otra carpeta
 cd /d "%~dp0"
 
 if not exist build\servidor.exe (
