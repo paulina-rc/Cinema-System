@@ -1,18 +1,6 @@
-// =============================================================================
-//  Database.cpp
-//  -----------------------------------------------------------------------------
-//  Implementacion de la clase Database con la API en C de SQLite.
-//  La clase Sentencia se copio del demo del profe; solo se le agrego reiniciar().
-//
-//  Flujo de cada consulta:
-//     1. sqlite3_prepare_v2()  -> "compila" el texto SQL
-//     2. sqlite3_bind_*()      -> rellena los parametros  ?
-//     3. sqlite3_step()        -> ejecuta; una fila cada vez
-//     4. sqlite3_column_*()    -> lee las columnas de la fila actual
-//     5. sqlite3_finalize()    -> libera la sentencia
-//
-//  Seguridad: nunca se concatena texto del usuario en el SQL; siempre ? + bind.
-// =============================================================================
+
+// todo lo que toca SQLite esta aqui. Las consultas siempre usan ? y bind,
+// nunca se pega texto del usuario dentro del SQL
 #include "Database.h"
 
 #include <stdexcept>
@@ -21,10 +9,8 @@
 
 namespace {
 
-// -----------------------------------------------------------------------------
-//  Sentencia: envoltorio RAII sobre sqlite3_stmt (copiado del demo).
-//  El constructor hace el paso 1 y el destructor el paso 5.
-// -----------------------------------------------------------------------------
+// envuelve un sqlite3_stmt para no tener que acordarse del finalize
+// viene del demo que vimos en clase, solo le agregue reiniciar()
 class Sentencia {
 public:
     Sentencia(sqlite3* db, const std::string& sql) : db_(db) {
@@ -37,12 +23,11 @@ public:
     Sentencia(const Sentencia&)            = delete;
     Sentencia& operator=(const Sentencia&) = delete;
 
-    // Los parametros se numeran desde 1.
+    // importante: los parametros van desde 1 pero las columnas desde 0
     void bind(int i, const std::string& v) { sqlite3_bind_text(stmt_, i, v.c_str(), -1, SQLITE_TRANSIENT); }
     void bind(int i, double v)             { sqlite3_bind_double(stmt_, i, v); }
     void bind(int i, int v)                { sqlite3_bind_int(stmt_, i, v); }
 
-    // Avanza a la siguiente fila. true = hay fila; false = termino.
     bool siguiente() {
         int rc = sqlite3_step(stmt_);
         if (rc == SQLITE_ROW)  return true;
@@ -50,14 +35,12 @@ public:
         throw std::runtime_error(std::string("Error ejecutando SQL: ") + sqlite3_errmsg(db_));
     }
 
-    // Deja la sentencia lista para ejecutarse otra vez con valores nuevos
-    // (sirve para insertar muchas filas con un solo prepare).
+    // para reutilizar la misma sentencia en un for sin preparar de nuevo
     void reiniciar() {
         sqlite3_reset(stmt_);
         sqlite3_clear_bindings(stmt_);
     }
 
-    // Las columnas se numeran desde 0.
     int         entero(int col) { return sqlite3_column_int(stmt_, col); }
     double      real(int col)   { return sqlite3_column_double(stmt_, col); }
     std::string texto(int col) {
@@ -70,8 +53,8 @@ private:
     sqlite3_stmt* stmt_ = nullptr;
 };
 
-// Convierte la fila actual de un SELECT en una Sala.
-// El orden debe coincidir con COLUMNAS_SALA.
+// leerSala y leerButaca leen las columnas en este mismo orden, si se cambia
+// una lista hay que cambiar la funcion
 const std::string COLUMNAS_SALA = "id, nombre, agrupaciones, butacas_por_agrupacion, habilitada";
 
 Sala leerSala(Sentencia& s) {
@@ -98,13 +81,9 @@ Butaca leerButaca(Sentencia& s) {
 
 } // namespace
 
-// =============================================================================
-//  Constructor / destructor
-// =============================================================================
 Database::Database(const std::string& ruta_archivo) {
-    // A diferencia del demo, NO creamos el archivo si no existe:
-    // las tablas se crean con database/schema.sql. Si falta cine.db,
-    // preferimos un error claro a una base de datos vacia.
+    // sin OPEN_CREATE a proposito: si falta cine.db es mejor que falle
+    // a que se cree una base vacia sin tablas (se crea con database/schema.sql)
     int flags = SQLITE_OPEN_READWRITE;
     if (sqlite3_open_v2(ruta_archivo.c_str(), &db_, flags, nullptr) != SQLITE_OK) {
         std::string msg = sqlite3_errmsg(db_);
@@ -112,26 +91,24 @@ Database::Database(const std::string& ruta_archivo) {
         throw std::runtime_error("No se pudo abrir " + ruta_archivo + ": " + msg);
     }
 
-    // SQLite trae las llaves foraneas apagadas: hay que activarlas
-    // cada vez que se abre la conexion.
+    // SQLite trae las llaves foraneas apagadas y hay que prenderlas
+    // cada vez que se abre la conexion
     ejecutar("PRAGMA foreign_keys = ON;");
 
-    // Bases de datos creadas antes de agregar los posters no tienen la
-    // columna imagen: se agrega aqui una sola vez (las peliculas viejas
-    // quedan con imagen = '' y la pagina muestra un poster de reemplazo).
+    // la columna imagen la agregue despues, asi que las bases viejas no la
+    // tienen. Se revisa y se agrega una sola vez
     bool tiene_imagen = false;
     {
         Sentencia s(db_, "PRAGMA table_info(peliculas)");
         while (s.siguiente()) {
-            if (s.texto(1) == "imagen") tiene_imagen = true;   // columna 1 = nombre
+            if (s.texto(1) == "imagen") tiene_imagen = true;
         }
     }
     if (!tiene_imagen) {
         ejecutar("ALTER TABLE peliculas ADD COLUMN imagen TEXT NOT NULL DEFAULT '';");
     }
 
-    // Tabla de usuarios del panel admin (igual que en schema.sql).
-    // IF NOT EXISTS: en bases de datos viejas se crea; en las nuevas no hace nada.
+    // lo mismo con la tabla de admins, por eso el IF NOT EXISTS
     ejecutar(
         "CREATE TABLE IF NOT EXISTS administradores ("
         "  id         INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -154,9 +131,6 @@ void Database::ejecutar(const std::string& sql) {
     }
 }
 
-// =============================================================================
-//  Administradores
-// =============================================================================
 std::optional<Administrador> Database::obtenerAdmin(const std::string& usuario) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -182,7 +156,7 @@ int Database::contarAdmins() {
 void Database::guardarAdmin(const std::string& usuario, const std::string& sal,
                             const std::string& clave_hash) {
     std::lock_guard<std::mutex> lock(mutex_);
-    // UPSERT: si el usuario ya existe, solo se cambia su sal y su hash.
+    // si el usuario ya existe solo se le cambia la clave
     Sentencia s(db_,
         "INSERT INTO administradores (usuario, sal, clave_hash) VALUES (?, ?, ?) "
         "ON CONFLICT(usuario) DO UPDATE SET sal = excluded.sal, clave_hash = excluded.clave_hash");
@@ -192,9 +166,6 @@ void Database::guardarAdmin(const std::string& usuario, const std::string& sal,
     s.siguiente();
 }
 
-// =============================================================================
-//  Salas
-// =============================================================================
 std::vector<Sala> Database::listarSalas() {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -217,7 +188,7 @@ std::optional<int> Database::crearSala(const std::string& nombre, int agrupacion
                                        int butacas_por_agrupacion) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // 1. El nombre no se puede repetir (tambien lo protege el UNIQUE de la tabla).
+    // se revisa antes para devolver nullopt en vez de que explote el UNIQUE
     {
         Sentencia existe(db_, "SELECT COUNT(*) FROM salas WHERE nombre = ?");
         existe.bind(1, nombre);
@@ -225,9 +196,8 @@ std::optional<int> Database::crearSala(const std::string& nombre, int agrupacion
         if (existe.entero(0) > 0) return std::nullopt;
     }
 
-    // 2. Transaccion: la sala y sus butacas se guardan TODAS o NINGUNA.
-    //    Si algo falla a la mitad, ROLLBACK deshace lo que se alcanzo a insertar
-    //    y no queda una sala con butacas incompletas.
+    // va en transaccion para que no quede una sala con la mitad de las butacas
+    // si algo falla a medio camino
     ejecutar("BEGIN TRANSACTION;");
     try {
         Sentencia sala(db_, "INSERT INTO salas (nombre, agrupaciones, butacas_por_agrupacion) "
@@ -238,9 +208,7 @@ std::optional<int> Database::crearSala(const std::string& nombre, int agrupacion
         sala.siguiente();
         int sala_id = static_cast<int>(sqlite3_last_insert_rowid(db_));
 
-        // 3. Generar la distribucion recorriendo la matriz:
-        //    fila = agrupacion, columna = numero de butaca.
-        //    Se prepara UNA sentencia y se reutiliza en cada vuelta (reset).
+        // fila = agrupacion, columna = numero
         Sentencia butaca(db_, "INSERT INTO butacas (sala_id, agrupacion, numero) VALUES (?, ?, ?)");
         for (int a = 0; a < agrupaciones; a++) {
             for (int n = 0; n < butacas_por_agrupacion; n++) {
@@ -256,7 +224,7 @@ std::optional<int> Database::crearSala(const std::string& nombre, int agrupacion
         return sala_id;
     } catch (...) {
         ejecutar("ROLLBACK;");
-        throw;   // el error sigue hacia main.cpp, que responde 500
+        throw;   // main.cpp lo atrapa y responde 500
     }
 }
 
@@ -270,9 +238,6 @@ bool Database::cambiarHabilitadaSala(int id, int habilitada) {
     return sqlite3_changes(db_) > 0;
 }
 
-// =============================================================================
-//  Butacas
-// =============================================================================
 std::vector<Butaca> Database::listarButacas(int sala_id) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -294,20 +259,15 @@ bool Database::cambiarHabilitadaButaca(int id, int habilitada) {
     return sqlite3_changes(db_) > 0;
 }
 
-// =============================================================================
-//  Peliculas
-// =============================================================================
 std::vector<Pelicula> Database::listarPeliculas(bool solo_cartelera) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // JOIN: trae tambien el nombre de la sala desde la tabla salas.
     std::string sql =
         "SELECT p.id, p.nombre, p.fecha_inicio, p.fecha_fin, p.precio, p.sala_id, s.nombre, p.imagen "
         "FROM peliculas p JOIN salas s ON s.id = p.sala_id ";
 
-    // Cartelera: la fecha de HOY tiene que estar dentro del periodo.
-    // Las fechas se guardan como 'AAAA-MM-DD', asi que se pueden comparar
-    // como texto y el orden coincide con el orden real de las fechas.
+    // Las fechas van como 'AAAA-MM-DD', asi que compararlas como texto
+    // da el mismo orden que las fechas reales.
     if (solo_cartelera) {
         sql += "WHERE date('now', 'localtime') BETWEEN p.fecha_inicio AND p.fecha_fin "
                "AND s.habilitada = 1 ";
@@ -331,7 +291,6 @@ std::vector<Pelicula> Database::listarPeliculas(bool solo_cartelera) {
         }
     }
 
-    // Horarios de cada pelicula (una consulta preparada, reutilizada).
     Sentencia h(db_, "SELECT id, hora FROM funciones WHERE pelicula_id = ? ORDER BY hora");
     for (Pelicula& p : resultado) {
         h.reiniciar();
@@ -349,7 +308,7 @@ std::vector<Pelicula> Database::listarPeliculas(bool solo_cartelera) {
 int Database::crearPelicula(const Pelicula& p, const std::vector<std::string>& horarios) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // Transaccion: la pelicula y sus horarios se guardan todos o ninguno.
+    // Igual que en crearSala, todo o nada.
     ejecutar("BEGIN TRANSACTION;");
     try {
         Sentencia ins(db_, "INSERT INTO peliculas (nombre, fecha_inicio, fecha_fin, precio, sala_id, imagen) "
@@ -379,9 +338,6 @@ int Database::crearPelicula(const Pelicula& p, const std::vector<std::string>& h
     }
 }
 
-// =============================================================================
-//  Clientes
-// =============================================================================
 int Database::crearCliente(const std::string& nombre, const std::string& telefono) {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -401,9 +357,6 @@ bool Database::existeCliente(int id) {
     return s.entero(0) > 0;
 }
 
-// =============================================================================
-//  Reservaciones
-// =============================================================================
 std::string Database::fechaHoy() {
     std::lock_guard<std::mutex> lock(mutex_);
 
@@ -415,7 +368,6 @@ std::string Database::fechaHoy() {
 std::optional<InfoFuncion> Database::obtenerFuncion(int funcion_id) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // JOIN de tres tablas: la funcion, su pelicula y la sala de la pelicula.
     Sentencia s(db_,
         "SELECT f.id, f.hora, p.id, p.nombre, p.precio, "
         "       s.id, s.nombre, s.agrupaciones, s.butacas_por_agrupacion, s.habilitada, "
@@ -447,12 +399,12 @@ void Database::cargarMatriz(const InfoFuncion& f, const std::string& fecha,
                             std::vector<std::vector<int>>& ids) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // 1. Crear la matriz del tamano de la sala, todo en 0 (disponible).
+    // Arranca todo en 0 (disponible) y despues se marcan las que no lo estan.
     matriz.assign(f.agrupaciones, std::vector<int>(f.butacas_por_agrupacion, 0));
     ids.assign(f.agrupaciones, std::vector<int>(f.butacas_por_agrupacion, 0));
 
-    // 2. LEFT JOIN: trae TODAS las butacas de la sala y, si la butaca ya
-    //    tiene reserva para esta funcion y este dia, r.id no es NULL.
+    // LEFT JOIN porque se necesitan todas las butacas, tengan reserva o no.
+    // Si hay reserva para esta funcion y este dia, r.id no viene NULL.
     Sentencia s(db_,
         "SELECT b.id, b.agrupacion, b.numero, b.habilitada, "
         "       (r.id IS NOT NULL) AS ocupada "
@@ -464,14 +416,13 @@ void Database::cargarMatriz(const InfoFuncion& f, const std::string& fecha,
     s.bind(2, fecha);
     s.bind(3, f.sala_id);
 
-    // 3. Pasar el estado de cada butaca a su posicion en la matriz.
     while (s.siguiente()) {
         int id = s.entero(0), a = s.entero(1), n = s.entero(2);
         if (a < 0 || a >= f.agrupaciones || n < 0 || n >= f.butacas_por_agrupacion) continue;
 
         ids[a][n] = id;
-        if (s.entero(3) == 0)      matriz[a][n] = 2;   // danada / fuera de servicio
-        else if (s.entero(4) == 1) matriz[a][n] = 1;   // ocupada por otro cliente
+        if (s.entero(3) == 0)      matriz[a][n] = 2;   // danada
+        else if (s.entero(4) == 1) matriz[a][n] = 1;   // ocupada
     }
 }
 
@@ -481,11 +432,13 @@ std::vector<int> Database::confirmarReserva(int funcion_id, int cliente_id,
     std::lock_guard<std::mutex> lock(mutex_);
     std::vector<int> conflictos;
 
-    // Transaccion: o se guardan TODAS las butacas del cliente o NINGUNA.
+    // BEGIN IMMEDIATE toma el lock de escritura desde el inicio, asi dos
+    // confirmaciones al mismo tiempo no pueden pasar la revision las dos.
     ejecutar("BEGIN IMMEDIATE TRANSACTION;");
     try {
-        // 1. Revisar otra vez en SQLite (otro cliente pudo reservar mientras
-        //    este elegia, o el administrador pudo inhabilitar la butaca).
+        // Se revisa otra vez aunque la matriz ya se reviso, porque mientras
+        // este cliente elegia otro pudo reservar o el admin pudo inhabilitar
+        // alguna butaca
         Sentencia revisar(db_,
             "SELECT b.habilitada, "
             "       (SELECT COUNT(*) FROM reservaciones r "
@@ -505,7 +458,6 @@ std::vector<int> Database::confirmarReserva(int funcion_id, int cliente_id,
             return conflictos;
         }
 
-        // 2. Insertar una fila por butaca nueva.
         Sentencia ins(db_,
             "INSERT INTO reservaciones (funcion_id, butaca_id, cliente_id, fecha) "
             "VALUES (?, ?, ?, ?)");
@@ -519,7 +471,7 @@ std::vector<int> Database::confirmarReserva(int funcion_id, int cliente_id,
         }
 
         ejecutar("COMMIT;");
-        return conflictos;   // vacio = todo bien
+        return conflictos;
     } catch (...) {
         ejecutar("ROLLBACK;");
         throw;
