@@ -1,12 +1,6 @@
-// =============================================================================
-//  modelos.h
-//  -----------------------------------------------------------------------------
-//  MODELOS DE DATOS: un struct por tabla de la base de datos.
-//  Cada campo del struct corresponde a una columna.
-//
-//  Cada modelo tiene su funcion to_json(): nlohmann/json la busca sola, asi
-//  en main.cpp basta con responderJson(res, sala) o responderJson(res, salas).
-// =============================================================================
+// modelos.h
+// un struct por tabla, cada to_json lo encuentra solo la libreria json
+// y por eso en main.cpp se puede hacer responderJson(res, sala) directo
 #pragma once
 
 #include <string>
@@ -15,13 +9,12 @@
 
 using json = nlohmann::json;
 
-// ---------------------------------------------------------------- Tabla salas
 struct Sala {
-    int         id = 0;                     // Clave primaria (la asigna SQLite)
+    int         id = 0;
     std::string nombre;
-    int         agrupaciones = 0;           // Filas de la matriz de butacas
-    int         butacas_por_agrupacion = 0; // Columnas de la matriz de butacas
-    int         habilitada = 1;             // 1 = activa, 0 = inhabilitada
+    int         agrupaciones = 0;           // filas de la matriz
+    int         butacas_por_agrupacion = 0; // columnas de la matriz
+    int         habilitada = 1;
 };
 
 inline void to_json(json& j, const Sala& s) {
@@ -34,24 +27,20 @@ inline void to_json(json& j, const Sala& s) {
     };
 }
 
-// ------------------------------------------------------ Tabla administradores
-// Usuario del panel admin. La contrasena NO se guarda: solo su hash
-// (ver Seguridad.h). Este struct nunca se manda al navegador.
+// no tiene to_json a proposito, esto nunca se manda al navegador
 struct Administrador {
     int         id = 0;
     std::string usuario;
-    std::string sal;          // texto aleatorio propio de este usuario
-    std::string clave_hash;   // hashClave(sal, contrasena)
+    std::string sal;          // texto aleatorio distinto por usuario
+    std::string clave_hash;   // hashClave(sal, contrasena), ver Seguridad.h
 };
 
-// -------------------------------------------------------------- Tabla butacas
-// (agrupacion, numero) = (fila, columna) de la matriz de la sala.
 struct Butaca {
     int id = 0;
     int sala_id = 0;
-    int agrupacion = 0;   // Empieza en 0
-    int numero = 0;       // Empieza en 0
-    int habilitada = 1;   // 1 = sirve, 0 = danada / fuera de servicio
+    int agrupacion = 0;   // fila de la matriz, empieza en 0
+    int numero = 0;       // columna de la matriz, empieza en 0
+    int habilitada = 1;   // 0 es que esta danada
 };
 
 inline void to_json(json& j, const Butaca& b) {
@@ -64,8 +53,6 @@ inline void to_json(json& j, const Butaca& b) {
     };
 }
 
-// ------------------------------------------------------------ Tabla funciones
-// Un horario de una pelicula. funcion_id es lo que se usa al reservar.
 struct Funcion {
     int         id = 0;
     std::string hora;      // "HH:MM"
@@ -75,7 +62,6 @@ inline void to_json(json& j, const Funcion& f) {
     j = json{ {"funcion_id", f.id}, {"hora", f.hora} };
 }
 
-// ------------------------------------------------------------ Tabla peliculas
 struct Pelicula {
     int         id = 0;
     std::string nombre;
@@ -83,14 +69,13 @@ struct Pelicula {
     std::string fecha_fin;      // "AAAA-MM-DD"
     double      precio = 0.0;
     int         sala_id = 0;
-    std::string sala;           // Nombre de la sala (viene del JOIN con salas)
-    std::string imagen;         // Ruta del poster, ej. "img/peliculas/pelicula-123.jpg" ("" = sin imagen)
+    std::string sala;           // nombre de la sala, viene del join
+    std::string imagen;         // ruta del poster, "" si no tiene
     std::vector<Funcion> horarios;
 };
 
-// ------------------------------------------------- Datos de una funcion (JOIN)
-// Todo lo que se necesita saber de una funcion para reservar:
-// funciones + peliculas + salas en una sola consulta.
+// junta funcion + pelicula + sala en una sola consulta, es lo que se
+// necesita para reservar
 struct InfoFuncion {
     int         funcion_id = 0;
     std::string hora;                  // "HH:MM"
@@ -102,7 +87,7 @@ struct InfoFuncion {
     int         agrupaciones = 0;
     int         butacas_por_agrupacion = 0;
     int         sala_habilitada = 1;
-    int         en_cartelera = 0;      // 1 si HOY esta dentro del periodo de exhibicion
+    int         en_cartelera = 0;      // 1 si hoy esta dentro de las fechas de exhibicion
 };
 
 inline void to_json(json& j, const Pelicula& p) {
