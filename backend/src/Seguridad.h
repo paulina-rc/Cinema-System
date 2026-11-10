@@ -1,21 +1,6 @@
-// =============================================================================
-//  Seguridad.h
-//  -----------------------------------------------------------------------------
-//  Login del administrador.
-//
-//  1. CONTRASENAS: nunca se guardan tal cual. Se guarda un "hash" SHA-256:
-//        hash = SHA256(sal + contrasena), repetido 10 000 veces
-//     La "sal" es un texto aleatorio distinto para cada usuario, asi dos
-//     usuarios con la misma contrasena no tienen el mismo hash.
-//     Para revisar un login se calcula el hash de lo que escribio la persona
-//     y se compara con el guardado.
-//
-//  2. SESIONES: al entrar bien, el servidor crea un TOKEN aleatorio y lo
-//     guarda en memoria con su hora de vencimiento (8 horas). El navegador
-//     lo manda en cada peticion del panel admin en el encabezado:
-//        Authorization: Bearer <token>
-//     Si el servidor se reinicia, las sesiones se borran y hay que entrar de nuevo.
-// =============================================================================
+// Seguridad.h
+// lo del login del admin: el hash de las contrasenas, las sesiones con token
+// y el sha256 que usan las dos cosas
 #pragma once
 
 #include <array>
@@ -26,9 +11,7 @@
 #include <random>
 #include <string>
 
-// -----------------------------------------------------------------------------
-//  SHA-256 (algoritmo estandar FIPS 180-4). Devuelve el resultado en hexadecimal.
-// -----------------------------------------------------------------------------
+// sha256 estandar, devuelve el hash en hexadecimal
 inline std::string sha256(const std::string& mensaje) {
     static const uint32_t k[64] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
@@ -45,14 +28,13 @@ inline std::string sha256(const std::string& mensaje) {
 
     auto rotr = [](uint32_t x, int n) { return (x >> n) | (x << (32 - n)); };
 
-    // Relleno: un bit 1, ceros, y el largo original en bits (64 bits, big endian)
+    // el relleno que pide el estandar: un bit 1, ceros y al final el largo original en bits
     std::string datos = mensaje;
     uint64_t largo_bits = static_cast<uint64_t>(mensaje.size()) * 8;
     datos.push_back(static_cast<char>(0x80));
     while (datos.size() % 64 != 56) datos.push_back('\0');
     for (int i = 7; i >= 0; i--) datos.push_back(static_cast<char>((largo_bits >> (i * 8)) & 0xff));
 
-    // Procesa cada bloque de 64 bytes
     for (size_t bloque = 0; bloque < datos.size(); bloque += 64) {
         uint32_t w[64];
         for (int i = 0; i < 16; i++) {
@@ -89,7 +71,8 @@ inline std::string sha256(const std::string& mensaje) {
     return resultado;
 }
 
-// Texto hexadecimal aleatorio (para sales y tokens). bytes=16 -> 32 caracteres.
+// hex aleatorio para sales y tokens, bytes=16 da 32 caracteres
+// lleva mutex porque el random_device es uno solo para todos los hilos
 inline std::string textoAleatorio(int bytes = 16) {
     static std::random_device rd;
     static std::mutex m;
@@ -104,14 +87,15 @@ inline std::string textoAleatorio(int bytes = 16) {
     return t;
 }
 
-// Hash de una contrasena con su sal (10 000 vueltas para que sea lento de adivinar).
+// la sal hace que dos usuarios con la misma clave no tengan el mismo hash,
+// y las 10 000 vueltas son para que probar claves sea lento
 inline std::string hashClave(const std::string& sal, const std::string& clave) {
     std::string h = sha256(sal + clave);
     for (int i = 0; i < 10000; i++) h = sha256(sal + h);
     return h;
 }
 
-// Compara dos textos tardando siempre lo mismo (no "avisa" en que letra fallo).
+// compara tardando siempre lo mismo, asi no se nota en que letra fallo
 inline bool igualesSeguro(const std::string& a, const std::string& b) {
     if (a.size() != b.size()) return false;
     unsigned char dif = 0;
@@ -119,15 +103,13 @@ inline bool igualesSeguro(const std::string& a, const std::string& b) {
     return dif == 0;
 }
 
-// -----------------------------------------------------------------------------
-//  Sesiones abiertas del administrador: token -> (usuario, vencimiento)
-// -----------------------------------------------------------------------------
+// las sesiones viven en memoria, si el servidor se reinicia hay que entrar de nuevo
+// el navegador manda el token en el encabezado Authorization: Bearer <token>
 class SesionesAdmin {
 public:
     using Reloj = std::chrono::steady_clock;
     static constexpr std::chrono::hours DURACION{8};
 
-    // Crea una sesion nueva y devuelve su token.
     std::string crear(const std::string& usuario) {
         std::lock_guard<std::mutex> lock(mutex_);
         limpiarVencidas();
@@ -136,7 +118,7 @@ public:
         return token;
     }
 
-    // Devuelve el usuario de la sesion, o "" si el token no existe o vencio.
+    // "" si el token no existe o ya vencio
     std::string usuario(const std::string& token) {
         std::lock_guard<std::mutex> lock(mutex_);
         auto it = sesiones_.find(token);
